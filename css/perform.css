@@ -1,0 +1,172 @@
+/* studio-game.css */
+#sg-canvas-container {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 5 !important;
+    pointer-events: none !important;
+    /* transparentを削除し、JSで制御しやすくする */
+    background: transparent; 
+    transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+}
+
+#sg-canvas-element {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    background-color: transparent !important; 
+}
+
+/* ESC中断ガイド文言（左上・Sessionモードと同じ表現） */
+#sg-esc-hint {
+    position: fixed !important;
+    top: 20px !important;
+    left: 24px !important;
+    z-index: 6 !important;
+    font-family: 'Kiwi Maru', serif !important;
+    font-size: 14px; /* ★ ここでフォントサイズを調整できます */
+    color: #e0d8c8;
+    opacity: 0;
+    pointer-events: none !important;
+}
+
+#sg-esc-hint.sg-esc-hint-flash {
+    animation: escHintFlashFade 5s ease forwards;
+}
+
+/* 0.3秒で軽く光り、1秒手前で落ち着き、3秒保持してから徐々に消える */
+@keyframes escHintFlashFade {
+    0%   { opacity: 0; }
+    6%   { opacity: 0.9; }   /* ★ 強すぎない一瞬の光り */
+    20%  { opacity: 0.55; }  /* 落ち着いた表示に移行 */
+    60%  { opacity: 0.55; }  /* ここまで（約3秒）表示を保持 */
+    100% { opacity: 0; }     /* 残り2秒でゆっくり消える */
+}
+
+/* 落下するブロックのベーススタイル */
+.falling-block {
+    position: absolute;
+    width: 50px; /* 必要に応じて調整 */
+    height: 20px;
+    background-color: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    border-radius: 4px;
+    top: -30px; /* 画面外からスタート */
+    animation: fall 2s linear forwards; /* 2秒で落ちる */
+}
+
+/* ====== スコアテーブルを格子状にする ====== */
+.score-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background: #111;
+    color: #eee;
+}
+
+.score-table th,
+.score-table td {
+    border: 1px solid #444;
+    height: 120px;
+    padding: 10px 10px;
+    text-align: center;
+}
+
+/* 先頭行（ヘッダー）を固定 */
+.score-table thead th {
+    position: sticky;
+    top: 0;
+    background: #222;   /* 背景を指定しないとスクロール時に透ける */
+    z-index: 5;
+    height: 40px;       /* ← 高さ固定 */
+    padding: 0 8px;     /* 高さを固定したいので上下 padding は 0 */
+    line-height: 12px;  /* テキストを中央に寄せる */
+}
+
+.score-table thead th {
+    background: #222;
+    font-weight: bold;
+}
+
+.score-table tbody tr:nth-child(even) {
+    background: #181818;
+}
+
+.score-table tbody tr:hover {
+    background: #262626;
+}
+
+/* ====== スコアテーブル列幅 ====== */
+
+/* No. */
+.score-table th:nth-child(1),
+.score-table td:nth-child(1) {
+    width: 40px;
+}
+
+/* TITLE */
+.score-table th:nth-child(2),
+.score-table td:nth-child(2) {
+    width: 110px; /* ← 好きに調整してOK */
+}
+
+/* Accuracy */
+.score-table th:nth-child(3),
+.score-table td:nth-child(3) {
+    width: 80px;
+}
+
+/* DATE */
+.score-table th:nth-child(4),
+.score-table td:nth-child(4) {
+    width: 90px;
+}
+
+/* GRAPH */
+.score-table th:nth-child(5),
+.score-table td:nth-child(5) {
+    width: 200px;
+}
+
+/* DEL */
+.score-table th:nth-child(6),
+.score-table td:nth-child(6) {
+    width: 50px;
+}
+
+/* ===== Sparkline 2-canvas layout ===== */
+.spark-wrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+}
+
+.spark-label {
+    width: 22px;
+    height: 100%;
+    pointer-events: none;
+}
+
+.spark-graph {
+    flex: 1;
+    margin-left: 4px;
+    height: 100%;
+}
+
+.score-studio-btn {
+    margin-top: 4px;
+    font-size: 11px;
+    padding: 2px 6px;
+    cursor: pointer;
+}
+
+
+@keyframes fall {
+    from { transform: translateY(0); opacity: 0; }
+    10% { opacity: 1; }
+    to { transform: translateY(100vh); opacity: 0; }
+}

@@ -1,0 +1,153 @@
+/* ==========================================
+   UI共通ベーススタイル (ui-base.css)
+   ========================================== */
+
+/* --- ブランド・共通レイアウト --- */
+
+/* アプリ全体でドラッグによる青い選択を禁止 */
+html, body {
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none;    /* Firefox */
+    -ms-user-select: none;     /* Edge */
+    user-select: none;         /* 標準 */
+    
+    /* ついでに iOS 等でのタップハイライト（一瞬暗くなる現象）も防ぐ */
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* 画像をマウスで掴んで引きずる動作も禁止（イーゼルや本に有効） */
+img {
+    -webkit-user-drag: none;
+    user-drag: none;
+}
+
+/* フォーム入力だけは例外として選択・入力できるようにしておく */
+input, textarea {
+    user-select: text !important;
+    -webkit-user-select: text !important;
+}
+
+.app-bar {
+    position: fixed;
+    top: 20px; left: 30px;
+    z-index: 300;
+    pointer-events: none;
+}
+
+.brand {
+    font-family: var(--font-brand);
+    font-size: 28px; line-height: 1;
+    color: #ffffff; font-style: italic;
+    text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
+    letter-spacing: 1px;
+    pointer-events: auto;
+}
+
+.blackboard-container {
+    position: fixed; z-index: 100;
+    left: 25px; bottom: 300px;
+    width: 380px; height: 440px;
+    background: url('../assets/blackboard.png') no-repeat center / contain;
+    pointer-events: none;
+}
+
+/* --- アンティーク・ボリューム・フェーダー --- */
+#antique-volume-fader {
+    position: fixed; left: 40px; bottom: 275px;
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(42, 27, 12, 0.8);
+    padding: 5px 15px; border-radius: 8px; 
+    border: 2px solid var(--color-wood-frame);
+    box-shadow: 4px 4px 15px rgba(0,0,0,0.6); 
+    z-index: 150;
+}
+
+/* --- ui-base.css に追記 --- */
+.fader-label { 
+    color: var(--color-gold-bright); 
+    font-family: 'Georgia', serif; 
+    font-size: 10px; 
+}
+
+#master-volume { -webkit-appearance: none; width: 150px; background: transparent; cursor: pointer; }
+#master-volume::-webkit-slider-runnable-track { width: 100%; height: 6px; background: #1a1a1a; border-radius: 3px; }
+#master-volume::-webkit-slider-thumb {
+    -webkit-appearance: none; height: 24px; width: 12px;
+    background: linear-gradient(145deg, var(--color-gold-bright), #8b5a2b);
+    border-radius: 2px; margin-top: -9px; border: 1px solid var(--color-wood-frame);
+}
+
+.volume-display { 
+    background-color: #1a1a1a; border: 1px solid var(--color-wood-frame); 
+    min-width: 45px; display: flex; justify-content: center; align-items: center; 
+}
+
+#volume-input, #bpm-input { 
+    background: transparent; border: none; color: #ff9d00; 
+    font-family: var(--font-mono); font-weight: bold; width: 100%; 
+    text-align: center; outline: none; appearance: textfield;
+}
+
+/* --- ボリューム/BPM数字表示エリアの微調整 --- */
+.volume-display { 
+    height: 24px;
+    box-sizing: border-box;
+}
+
+#volume-input, #bpm-input { 
+    margin: 0; padding: 0; 
+    line-height: 1;
+}
+
+/* Chrome/Safariなどの入力欄の矢印を非表示に */
+#volume-input::-webkit-inner-spin-button,
+#volume-input::-webkit-outer-spin-button,
+#bpm-input::-webkit-inner-spin-button,
+#bpm-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* --- 共通コンポーネントの基本定義 --- */
+
+/* 1. タグの基本スタイル */
+.mode-tag {
+    position: relative;
+    pointer-events: auto;
+    transition: all 0.1s ease;
+    backface-visibility: hidden;
+}
+
+.mode-tag img {
+    display: block;
+    width: 100%; height: 100%;
+    object-fit: fill;
+    mix-blend-mode: multiply;
+}
+
+.mode-tag:not(.active) { filter: brightness(0.7) grayscale(0.2); opacity: 0.9; }
+.mode-tag.active { filter: brightness(1.1); transform: scale(1.02); z-index: 10; }
+
+/* 2. 刻印ラベル共通 */
+.mode-tag::before {
+    position: absolute;
+    z-index: 5;
+    font-family: var(--font-serif);
+    font-weight: 900; 
+    color: var(--color-wood-dark);
+    white-space: nowrap;
+    pointer-events: none; 
+    transition: all 0.2s ease;
+    text-shadow: var(--shadow-stamp);
+}
+
+/* 3. ボタンの基本形状（28px系） */
+.record-stamp, .guide-stamp {
+    font-size: 10px !important;
+    height: 28px !important;
+    min-width: 100px !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}

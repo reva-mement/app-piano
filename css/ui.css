@@ -1,0 +1,80 @@
+/* ==========================================
+   PianoWorks Theme Definition (theme.css)
+   ========================================== */
+
+:root {
+    /* --- Colors: Wood & Ink (木材とインク) --- */
+    --color-wood-dark: #1a1005;            /* 焦げ茶・インク色 */
+    --color-wood-frame: #3e2712;           /* 枠組みの木材 */
+    --color-wood-gradient-start: rgba(50, 35, 25, 0.98);
+    --color-wood-gradient-end: rgba(25, 15, 10, 0.99);
+
+    /* --- Colors: Gold & Brass (金と真鍮) --- */
+    --color-gold-antique: rgba(210, 180, 140, 0.95); /* くすんだ金 */
+    --color-gold-bright: #d4af37;                    /* 明るい金 */
+    --color-gold-glow: rgba(212, 175, 55, 0.4);
+    
+    /* --- Colors: Accent (アクセント) --- */
+    --color-accent-red: rgba(180, 40, 80, 0.95);     /* ホバー時の赤 */
+
+    /* --- Fonts --- */
+    --font-brand: 'Lobster', cursive;
+    --font-serif: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+    --font-mono: 'Courier New', Courier, monospace;
+
+    /* --- Shared Effects (共通エフェクト) --- */
+    --shadow-stamp: -1px -1px 0px rgba(0, 0, 0, 0.9), 
+                    1px 1px 0px rgba(255, 255, 255, 0.5);
+    --shadow-inset-soft: inset 1px 1px 2px rgba(0, 0, 0, 0.7);
+    --shadow-inset-deep: inset 3px 3px 6px rgba(0, 0, 0, 0.9);
+    --blur-modal: blur(4px);
+}
+
+/* ============================================================
+   PianoWorks Global Theme & Variables
+   ============================================================ */
+
+:root {
+    /* --- Settings Button Layout --- */
+    --settings-btn-top: 20px;
+    --settings-btn-right: 20px;
+    --settings-btn-size: 42px;
+
+    /* --- Session Mode Layout --- */
+    --session-controls-left: 75px;
+    --session-controls-top: 58%;
+    --session-gap: 18px;
+    --session-btn-width: 95px;
+    
+    /* 既存の変数がある場合はここに追加・統合 */
+    --brass-color: #b5a642;
+    --brass-light: #ffdf7e;
+    --brass-shadow: rgba(0, 0, 0, 0.6);
+}
+
+/* --- Global Scrollbar Style --- */
+.scroll-container::-webkit-scrollbar {
+    width: 6px;
+}
+.scroll-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+}
+.scroll-container::-webkit-scrollbar-thumb {
+    background: var(--brass-color);
+    border-radius: 3px;
+}
+
+/* --- Shared Animations --- */
+
+/* 録音中のパルス点滅 */
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+/* ファイル名の横スクロール */
+@keyframes scroll-text {
+    0% { transform: translateX(var(--container-width, 200px)); } 
+    100% { transform: translateX(-100%); } 
+}
