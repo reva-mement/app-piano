@@ -1,0 +1,33 @@
+■ PianoWorks プロジェクト定義書 (2026-03-29 改訂版)
+【核心理念】
+「音楽の中に入る」体験：聴く人を奏者・演出家へと変える、没入型インターフェース。
+
+【機能モード（3-Panel System）】 ★更新
+各モードは独立したパネルとして管理され、UIと機能を完全分離する。
+
+STUDIO Mode (旧 Playing)：自由演奏・MIDI録音・練習に特化した制作空間。
+
+SESSION Mode (旧 MIDI Play)：MIDI音源やバック映像との共演を楽しむ空間。
+
+PERFORM Mode (旧 Live)：外部映像とアルゴリズム演奏を融合させる演出空間。
+
+【構造（マスターデータ）】 ★更新
+src/ 内の js/ 階層を、モードごとのロジックと共通コア機能に整理。
+
+Plaintext
+/src
+ ├── index.html           (アプリの入り口：タブ切り替えの骨組み)
+ ├── css/                 (デザイン：5px台形タグ、各パネル、液晶窓の定義)
+ │    └── style.css
+ ├── js/                  (プログラム)
+ │    ├── main.js         (全体制御：タブ切り替え、パネルの表示非表示管理)
+ │    ├── modes/          (モード別：studio.js, session.js, perform.js) ★新規
+ │    ├── core/           (共通：audio.js, recorder.js, visualizer.js等)
+ │    └── instruments/    (個別：piano.js, guitar.js等)
+ └── assets/              (素材：真鍮タグPNG、音源、背景映像)
+【機能・プラン】
+主要機能: 88鍵(オクターブ移動)、発光演出(Blue/Yellow)、透過合成、MP3盛り上がり検知。
+
+販売モデル: Web版(無料) / Tauri買い切り(1,500円) / Works Pass(500円/月)。
+
+戦略: サーバーレスの「ローカル完結型」。共通coreの使い回しによる多楽器展開。
