@@ -3,7 +3,7 @@
    ========================================== */
 #view-piano {
     position: fixed;
-    bottom: -60px; /* ★ Web版はTauriより表示領域が狭いため、少し下にずらす */
+    bottom: -100px; /* ★ Web版はTauriより表示領域が狭いため、少し下にずらす */
     left: 0;
     width: 100%;
     height: 280px; 
