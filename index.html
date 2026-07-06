@@ -2,14 +2,15 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <base href="./">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PianoWorks</title>
     
 <script src="./ort.min.js"></script>
 <script>
     if (window.ort) {
-        // WASMファイルもルート直下にあるため "/" で指定
-        ort.env.wasm.wasmPaths = "/";
+        // ★ サブパス配信でも崩れないよう相対パスに変更
+        ort.env.wasm.wasmPaths = "./";
         ort.env.wasm.numThreads = 1;
         ort.env.wasm.proxy = false;
     }
