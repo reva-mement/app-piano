@@ -230,13 +230,13 @@
 .playlist-easel {
     display: block;
     position: absolute; 
-    bottom: 0;
-    right: -55px;          /* コンテナの右端（画面右端）を基準にする */
+    bottom: 10px;           /* 0 → 10px（上に10px） */
+    right: -75px;            /* -55px → -75px（右に20px） */
     width: 250px; 
-    height: 300px;     /* クリック判定の高さもしっかり確保 */
+    height: 300px;
     cursor: pointer;
     pointer-events: auto; 
-    transform: translateX(-50px); /* ★これで画面内に引き戻す（数値は調整してください） */
+    transform: translateX(-50px);
     transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.2s ease;
 }
 
