@@ -40,7 +40,7 @@
 /* --- 3. 個別配置と特定パーツ --- */
 /* 各モードタグの座標調整 */
 #tag-session { width: 660px; height: 280px; margin-top: 5px; margin-left: 140px; transform: translateY(120px) !important; }
-#tag-studio  { width: 670px; height: 240px; margin-top: -35px; margin-left: 150px; transform: translateY(100px) !important; }
+#tag-studio  { width: 670px; height: 240px; margin-top: -35px; margin-left: 150px; transform: translateY(80px) !important; }
 
 /* ★ 負のmargin-topで重ねているため、DOM順（後＝手前）だと
    Session/Studioのボタンが下のタグに隠れてしまう。
