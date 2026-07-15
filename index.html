@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <base href="./">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PianoWorks</title>
+    
+<script src="./ort.min.js"></script>
+<script>
+    if (window.ort) {
+        ort.env.wasm.wasmPaths = "./";
+        ort.env.wasm.numThreads = 1;
+        ort.env.wasm.proxy = false;
+    }
+</script>
+
+    <link rel="stylesheet" href="css/theme.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kiwi+Maru:wght@300;400&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="css/components.css?update">
+    <link rel="stylesheet" href="css/ui-base.css"> 
+    <link rel="stylesheet" href="css/style.css">
+    
+    <link rel="stylesheet" href="css/piano.css"> 
+    <link rel="stylesheet" href="css/ui.css">
+    <link rel="stylesheet" href="css/session.css">
+    <link rel="stylesheet" href="css/studio-game.css">
+    <link rel="stylesheet" href="css/scoring.css">
+
+</head>
+<body>
+    <div id="help-trigger" class="settings-floating-btn help-floating-btn">
+        <span class="help-mark">?</span>
+    </div>
+
+    <div id="settings-trigger" class="settings-floating-btn">
+        <svg viewBox="0 0 24 24" class="gear-svg">
+            <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.13,5.91,7.62,6.29L5.23,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.72,8.87 c-0.11,0.21-0.06,0.47,0.12,0.61l2.03,1.58C4.84,11.36,4.81,11.68,4.81,12c0,0.32,0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.11-0.21,0.06-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z" fill="currentColor"/>
+        </svg>
+    </div>
+
+    <div id="piano-loader-container" class="piano-loader-container">
+        <svg viewBox="0 0 100 100" class="piano-svg">
+            <path id="chalk-path" 
+                d="M20,70 L20,40 Q20,20 50,20 L85,20 L85,45 Q85,70 65,70 L65,85 M35,70 L35,85 M80,65 L80,82 M20,70 L65,70" 
+                fill="none" 
+                stroke="#fff" 
+                stroke-width="1.2" 
+                stroke-linecap="round" />
+        </svg>
+        <div id="loader-status-text">Preparing PianoWorks...</div>
+    </div>
+
+    <div id="video-background"></div>
+    <iframe id="video-background-iframe" allow="autoplay; encrypted-media" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:0; border:none; pointer-events:none;"></iframe>
+
+    <!-- ★★★ 診断用：タグの仕組みと完全に切り離し、確実に見える固定座標に強制表示 --- -->
+    <div id="midi-search-bar" style="display: flex !important; position: fixed !important; top: 50px !important; left: 440px !important; z-index: 150 !important; gap: 8px; width: 590px;">
+        <input type="text" id="midi-search-input" placeholder="ここからMIDIを検索することができます" style="flex: 1; min-width: 0; padding: 10px 14px; background: rgba(0,0,0,0.4); border: 1px solid #634a35; border-radius: 4px; color: #e0d0b0; font-size: 0.85rem;">
+        <button id="midi-search-btn" class="btn-stamp-base" style="min-width: 100px;">Search</button>
+    </div>
+
+    <!-- ★★★ 修正：#tag-studio の子要素だと、親の非アクティブ時filterの影響を受けて
+         暗く見えてしまい、子側では打ち消せなかった。.control-panel-container の
+         transformの影響も受けない、body直下に配置し直す。 -->
+    <div class="studio-seek-container">
+        <input type="range" id="studio-seek-slider" min="0" max="100" value="0" step="0.1">
+        <div id="studio-time-display">00:00 / 00:00</div>
+    </div>
+
+    <div id="control-panel-wrapper">
+        <div id="antique-volume-fader" class="fader-container">
+            <span class="fader-label">MIN</span>
+            <input type="range" id="master-volume" min="0" max="1" step="0.01" value="0.5">
+            <span class="fader-label">MAX</span>
+            <div class="volume-display">
+                <input type="number" id="volume-input" min="0" max="99" value="50">
+            </div>
+        </div>
+    </div>
+
+<div id="ui-layer">
+    <header class="app-bar">
+        <div class="brand">Piano Works</div>
+    </header>
+
+    <div class="control-panel-container">
+        <div class="mode-selector-stack">
+            <div class="mode-tag active" id="tag-session" data-mode="session">
+                <img src="assets/tag_session.png" alt="Session">
+                <div class="session-controls">
+                    <div class="btn-stamp-base session-play-btn" id="session-play-pause-btn">▶ PLAY</div>
+                    <div class="btn-stamp-base session-rec-btn" id="session-rec-btn">● REC</div>
+                    <select id="session-genre-select" class="session-genre-select">
+                        <option value="jazz">jazz</option>
+                        <option value="anison">anison</option>
+                        <option value="classic">classic</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mode-tag" id="tag-studio" data-mode="studio">
+                <img src="assets/tag_studio.png" alt="Studio">
+                <div class="btn-stamp-base play-stamp" id="studio-play-btn">▶ PLAY</div>
+                <div class="studio-stacked-btns">
+                    <div class="btn-stamp-base record-stamp" id="studio-rec-btn">● REC</div>
+                    <div class="btn-stamp-base guide-stamp" id="studio-guide-btn">GAME ON</div>
+                </div>
+                <div class="btn-stamp-base stop-stamp" id="studio-stop-btn">■ STOP</div>
+                <div class="display-sunken song-title-display yt-url-display" id="studio-song-display">
+                    <span class="scroll-text">No Data</span>
+                </div>
+            </div>
+
+        </div> 
+    </div>
+
+    <div class="midi-station-container">
+        <label for="midi-upload" class="playlist-easel">
+            <img src="assets/playlist-easel.png" alt="Playlist Easel">
+            <input type="file" id="midi-upload" accept=".mid,.midi" style="display:none;">
+        </label>
+    </div>
+
+    <div id="playlist-icon-btn" class="playlist-icon-wrapper" style="cursor: pointer;">
+        <img src="assets/pianoworks_playlist_cover.png" alt="Playlist Archive">
+    </div>
+
+    <!-- ★★★ 黒板をここに移動 ★★★ -->
+    <div class="blackboard-container">
+        <div id="weather-icon-container" class="weather-visual-box">
+            <img id="weather-image" src="assets/neutral.png" alt="weather">
+        </div>
+
+        <div id="ai-thought-bubble" class="ai-mutter-box">
+            <span class="speech-bubble-text">...</span>
+        </div>
+    </div>
+</div>
+
+<section id="view-piano" class="view-panel active">
+    <div class="piano-minimap-container">
+        <div id="minimap-base" class="minimap-base">
+            <div id="minimap-viewport-frame" class="minimap-viewport-frame"></div>
+        </div>
+    </div>
+    
+    <div id="piano-viewport">
+        <div id="range-mask">
+            <div id="piano-canvas" class="piano-keyboard"></div>
+        </div>
+    </div>
+
+    <div id="sg-canvas-container"></div>
+</section>
+
+<div id="sg-canvas-container"></div>
+</section>
+
+
+<!-- Session Overlay -->
+<div id="session-overlay" class="session-overlay">
+    <canvas id="session-effect-canvas"></canvas>
+    <div id="session-esc-hint">ESC押すと中断することができます</div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settings-modal-overlay" class="settings-overlay" style="display: none;">
+    <div class="settings-board-container">
+        <div class="settings-header">
+            <span class="settings-title">SYSTEM CONFIGURATION</span>
+            <div id="settings-close-btn" class="close-x">×</div>
+        </div>
+        <div class="settings-body scroll-container">
+            <div class="settings-group">
+                <span class="settings-group-label">演奏視界の広さ</span>
+                <div class="settings-item">
+                    <div class="radio-group" id="settings-range-group">
+                        <label class="radio-label"><input type="radio" name="focus-range" value="3" checked><span>3 Oct</span></label>
+                        <label class="radio-label"><input type="radio" name="focus-range" value="2"><span>2 Oct</span></label>
+                        <label class="radio-label"><input type="radio" name="focus-range" value="1"><span>1 Oct</span></label>
+                        <label class="radio-label"><input type="radio" name="focus-range" value="0.5"><span>0.5 Oct</span></label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <span class="settings-group-label">GAME ON時の背景画面のカスタマイズ</span>
+                <div class="settings-item" style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px;">
+                    <input type="text" id="bg-url-input" placeholder="https://example.com" style="flex: 1; min-width: 0; padding: 10px 14px; background: rgba(0,0,0,0.3); border: 1px solid #634a35; border-radius: 4px; color: #e0d0b0; font-size: 0.85rem;">
+                    <button id="bg-customize-btn" class="btn-stamp-base">Customize</button>
+                    <button id="bg-default-btn" class="btn-stamp-base">Default</button>
+                </div>
+                <div id="bg-url-status" style="text-align: center; font-size: 0.7rem; color: #c9a063; margin-top: 8px; min-height: 1em;"></div>
+
+                <div class="settings-item" style="display: flex; align-items: center; gap: 12px; margin-top: 16px;">
+                    <span class="fader-label" style="white-space: nowrap;">オーバーレイの濃さ</span>
+                    <input type="range" id="game-overlay-opacity-slider" min="0" max="1" step="0.01" value="0.95" style="flex: 1;">
+                    <span id="game-overlay-opacity-value" class="fader-label" style="min-width: 2.5em; text-align: right;">0.95</span>
+                </div>
+            </div>
+
+            <!-- ★ PianoWorksバナーを上に -->
+            <img src="assets/banner1_2.5x.png" alt="PianoWorks Banner"
+                 onclick="if (window.__TAURI__) { window.__TAURI__.core.invoke('plugin:opener|open_url', { url: 'https://t.co/6EumuT2iMr' }); } else { window.open('https://t.co/6EumuT2iMr', '_blank'); }"
+                 style="display: block; width: 470px; max-width: 100%; height: 100px; object-fit: fill; margin: 24px auto 0; border-radius: 6px; cursor: pointer;">
+
+            <!-- ★ LevaCraft×Xバナーを下に。バナー同士の距離＝0px -->
+            <img src="assets/leva_x_banner.png" alt="Follow LevaCraft on X"
+                 onclick="if (window.__TAURI__) { window.__TAURI__.core.invoke('plugin:opener|open_url', { url: 'https://x.com/LevaCraft' }); } else { window.open('https://x.com/LevaCraft', '_blank'); }"
+                 style="display: block; width: 470px; max-width: 100%; height: 100px; object-fit: fill; margin: 0px auto 0; border-radius: 6px; margin-bottom: 24px; cursor: pointer;">
+        </div>
+
+        <div class="settings-footer">
+            <button id="settings-cancel-btn" class="btn-stamp-base">CANCEL</button>
+            <button id="settings-ok-btn" class="btn-stamp-gold">APPLY OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- ★ ヘルプモーダル（設定画面と同じ .settings-board-container 構造を再利用してデザインを統一） -->
+<div id="help-modal-overlay" class="settings-overlay" style="display: none;">
+    <div class="settings-board-container">
+        <div class="settings-header">
+            <span class="settings-title">HELP</span>
+            <div id="help-close-btn" class="close-x">×</div>
+        </div>
+        <div class="settings-body scroll-container">
+
+            <div class="settings-group">
+                <span class="settings-group-label">Session モード</span>
+                <div class="settings-item help-text">
+                    自由に演奏しながら、AIが伴奏やメロディで応えてくれるモードです。▶ PLAYで演奏を開始し、● RECで自分の演奏を記録できます。演奏に合わせて背景エフェクトやAIキャラクターが反応します。
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <span class="settings-group-label">Session Archive</span>
+                <div class="settings-item help-text">
+                    Sessionモードで録音した演奏の一覧です。過去の演奏を再生したり、SNS(𝕏)へ共有したりできます。共有時は演奏を再生できるリンクが発行され、MIDIファイル自体をダウンロードするかどうかは選択できます。
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <span class="settings-group-label">Studio モード</span>
+                <div class="settings-item help-text">
+                    読み込んだMIDIファイルを練習するモードです。通常再生に加えて、GAME ONを有効にすると、弾くべき音符が鍵盤の上からブロックとして降ってきて、実際に鍵盤を弾いてタイミングを合わせるゲーム形式で練習できます。プレイ後はスコアが表示され、自己ベストを更新するとHigh Score表示が出ます。
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <span class="settings-group-label">Studio Archive</span>
+                <div class="settings-item help-text">
+                    Studioモードでプレイした曲ごとのスコア記録一覧です。曲ごとの最高スコアや正答率、プレイ履歴のグラフを確認できます。
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <span class="settings-group-label">設定</span>
+                <div class="settings-item help-text">
+                    演奏視界の広さ（鍵盤上でハイライトされる音域の範囲）や、GAME ON時の背景画面のカスタマイズなど、アプリ全体の見た目や挙動を調整できます。
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <span class="settings-group-label">GAME ON時の背景画面のカスタマイズ</span>
+                <div class="settings-item help-text">
+                    URLを入力して「Customize」→「APPLY OK」で、GAME ON中の背景を好きなWebページや動画に変更できます（YouTubeの通常URLも自動的に埋め込み用に変換されます）。設定はGAME ONを開始した時にだけ反映され、それ以外の画面や、中断・終了後は通常の背景に戻ります。「Default」→「APPLY OK」で元に戻せます。<br>
+                    あわせて、背景がどれくらい透けて見えるか（オーバーレイの濃さ）もスライダーで調整できます。数値が小さいほど背景がはっきり見え、大きいほどブロックなどが見やすくなります。
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <span class="settings-group-label">MIDI Import</span>
+                <div class="settings-item help-text">
+                    お手持ちのMIDIファイル（.mid）を読み込んで、Studioモードで練習できるようにする機能です。読み込んだ曲は自動的にStudio Archiveにも登録されます。
+                </div>
+            </div>
+
+        </div>
+
+        <div class="settings-footer">
+            <button id="help-cancel-btn" class="btn-stamp-base">CANCEL</button>
+        </div>
+    </div>
+</div>
+
+<!-- Playlist Board -->
+<div id="pw-board" class="playlist-overlay" style="display: none;">
+    <div class="pw-board-container">
+        <div class="settings-header">
+            <span class="settings-title">Session Archive</span>
+            <div id="pw-close-x" class="close-x">×</div>
+        </div>
+        <div class="settings-body scroll-container">
+            <div id="playnote-list-container"></div>
+        </div>
+        <div class="settings-footer">
+            <button id="pw-close" class="btn-stamp-base">CANCEL</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Modal -->
+<div id="toast-modal" class="playlist-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10010; background: rgba(0,0,0,0.5);">
+    <div class="modal-content mini-modal">
+        <div class="settings-header">
+            <span class="settings-title">MESSAGE</span>
+        </div>
+        <div class="settings-body" style="text-align: center; padding: 30px 20px;">
+            <p id="toast-message"></p>
+        </div>
+        <div class="settings-footer" style="justify-content: center;">
+            <button class="btn-stamp-base" style="width: 100px;" onclick="closeToast()">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- ★ MIDI重複確認モーダル（選択モーダルと同デザイン） -->
+<div id="duplicate-confirm-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.55); justify-content: center; align-items: center; z-index: 99999;">
+    <div class="pw-select-container">
+        <div class="pw-select-body">
+            <p id="duplicate-confirm-message" style="color:#eee; font-size:15px; line-height:1.6; margin:0; text-align:center;">同じ曲がStudio Archiveに登録されているようです。処理を選んでください。</p>
+            <button id="duplicate-confirm-overwrite" class="btn-stamp-base pw-select-btn">上書き保存をする</button>
+            <button id="duplicate-confirm-new" class="btn-stamp-base pw-select-btn">新しい曲として登録する</button>
+        </div>
+    </div>
+</div>
+
+<!-- ★ プレイリスト / スコア選択モーダル（修正版） -->
+<div id="pw-select-mode" class="playlist-overlay" style="display:none;">
+    <div class="pw-select-container">
+        <div class="settings-header">
+            <span class="settings-title">ARCHIVE</span>
+            <div id="pw-select-close-x" class="close-x">×</div>
+        </div>
+        <div class="pw-select-body">
+            <button id="pw-open-playlist" class="btn-stamp-base pw-select-btn">Session Archive</button>
+            <button id="pw-open-score" class="btn-stamp-base pw-select-btn">Studio Archive</button>
+        </div>
+        <div class="pw-select-footer">
+            <button id="pw-select-close" class="btn-stamp-base">CANCEL</button>
+        </div>
+    </div>
+</div>
+
+<!-- ★ Scoring モーダル -->
+<div id="pw-score-board" class="playlist-overlay" style="display: none;">
+    <div class="pw-board-container">
+        <div class="settings-header">
+            <span class="settings-title">Studio Archive</span>
+            <div id="pw-score-close-x" class="close-x">×</div>
+        </div>
+
+        <div class="settings-body scroll-container">
+            <div id="score-content-container">
+                <!-- ★ Studio スコア一覧をここに描画する -->
+                <div id="studio-score-list"></div>
+            </div>
+        </div>
+
+        <div class="settings-footer">
+            <button id="pw-score-close" class="btn-stamp-base">CANCEL</button>
+        </div>
+    </div>
+</div>
+
+<!-- ★ Sparkline Tooltip -->
+<div id="score-tooltip" class="hidden">
+  <div class="tooltip-line"><strong>Date:</strong> <span id="tt-date"></span></div>
+  <div class="tooltip-line"><strong>Score:</strong> <span id="tt-score"></span></div>
+  <div class="tooltip-line"><strong>Accuracy:</strong> <span id="tt-accuracy"></span>%</div>
+  <div class="tooltip-line"><strong>Range:</strong> <span id="tt-range"></span></div>
+  <button id="tt-delete-btn">削除</button>
+</div>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js')
+      .then(() => console.log('Service Worker Registered'));
+  }
+</script>
+
+<script type="module" src="./js/playnote-db.js"></script>
+<script type="module" src="./js/main.js"></script>
+
+
+</body>
+</html>
