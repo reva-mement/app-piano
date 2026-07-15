@@ -487,13 +487,30 @@
 
 .ai-mutter-box {
     position: absolute;
-    top: 100px;
-    left: 190px;
-    right: 20px;
-    padding: 15px;
+    top: 140px;
+    left: 196px;
+    width: 148px;
+    min-height: 88px;
+    box-sizing: border-box;
+    padding: 10px 14px;
+    display: flex;
+    align-items: flex-start;
+    text-align: left;
+
+    background: radial-gradient(ellipse at 30% 25%, rgba(255, 255, 255, 0.20), rgba(255, 255, 255, 0.06) 75%);
+    border: 2.5px solid rgba(255, 255, 255, 0.6);
+    border-radius: 34px 44px 38px 46px / 42px 36px 46px 34px;
+    transform: rotate(-0.8deg);
+
+    box-shadow:
+        0 0 14px rgba(255, 255, 255, 0.1) inset,
+        0 0 10px rgba(255, 255, 255, 0.2),
+        1.5px 2px 0 -1px rgba(255, 255, 255, 0.25);
+
+    overflow: hidden;
+    z-index: 6;
     pointer-events: none;
 }
-
 .speech-bubble-text {
     /* 筆記体に近い日本語フォントに変更 */
     font-family: 'Kiwi Maru', serif; 
@@ -520,20 +537,20 @@
 }
 
 .weather-visual-box {
-    position: absolute; /* 他の要素を無視して配置 */
-    top: 210px;          /* 黒板の上端からの距離 */
-    right: 210px;        /* 黒板の右端からの距離 */
-    
+    position: absolute;
+    top: 106px;
+    left: 24px;
+
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 120px;        /* アイコンの表示エリアサイズ */
-    height: 120px;
-    z-index: 5;         /* セリフより背後、または手前に調整（必要に応じて） */
-    
+    width: 450px;
+    height: 425px;
+    z-index: 5;
+
     transition: opacity 0.8s ease-in-out;
-    background-color: transparent !important; /* 背景は完全に透明 */
-    pointer-events: none; /* アイコンがクリックの邪魔をしないように */
+    background-color: transparent !important;
+    pointer-events: none;
 }
 
 #weather-image {
