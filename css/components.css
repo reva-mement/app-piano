@@ -544,8 +544,8 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 450px;
-    height: 425px;
+    width: 225px;
+    height: 212px;
     z-index: 5;
 
     transition: opacity 0.8s ease-in-out;
