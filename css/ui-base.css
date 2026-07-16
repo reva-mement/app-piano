@@ -59,7 +59,7 @@ input, textarea {
     padding: 5px 15px; border-radius: 8px; 
     border: 2px solid var(--color-wood-frame);
     box-shadow: 4px 4px 15px rgba(0,0,0,0.6); 
-    z-index: 150;
+    z-index: 100200;
 }
 
 /* --- ui-base.css に追記 --- */
