@@ -205,6 +205,13 @@ handleKeyPress(noteName) {
                 accuracyPercent: judge.score,        // 既存の表示フィールドと互換をとる
                 seq: window.blockResults.length + 1
             });
+
+            // ★ リアルタイムスコア表示をスロットリール風に更新
+            if (typeof window.calcTotalScore === 'function') {
+                const rangeWidth = window.currentRangeWidth || 1.0;
+                const result = window.calcTotalScore(window.blockResults, rangeWidth);
+                this._updateLiveScore(result.totalScore);
+            }
         }
 
         // ★ 押した瞬間に爆発
@@ -295,6 +302,10 @@ this.blocks.push({
     y: -30,
     speed,
     color,
+    // ★ パフォーマンス対策：トレイル用のhsla文字列を毎フレーム正規表現で
+    //   作り直さないよう、生成時に1回だけ計算してキャッシュしておく
+    trailColorLight: this._toRgba(color, 0.10),
+    trailColorHeavy: this._toRgba(color, 0.45),
     // ★★★ 修正：毎フレーム document.querySelector し直していたのをやめ、
     //   生成時に1回だけ鍵盤要素を取得してブロック自身に保持させる。
     //   一瞬でも要素が見つからないフレームがあると、その回は描画自体が
@@ -316,6 +327,75 @@ this.blocks.push({
 // -------------------------
 // エンジン開始（カウントダウン付き）
 // -------------------------
+// ★ GAME ON中のリアルタイムスコア表示（終了時のスコアポップアップと同じ位置・見た目）
+_ensureLiveScoreEl() {
+    let el = document.getElementById('sg-live-score');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'sg-live-score';
+        el.className = 'sg-score-popup';
+        // ★ 暗幕(#sg-canvas-container)より確実に手前に出るよう、
+        //   クラス側のz-indexに頼らずインラインで直接指定する（!importantで強制）
+        el.style.setProperty('z-index', '50000', 'important');
+        el.style.display = 'none';
+        el.innerHTML = `
+            <div class="sg-score-popup-label">SCORE</div>
+            <div class="sg-score-popup-value" id="sg-live-score-value">0</div>
+        `;
+        document.body.appendChild(el);
+    }
+    return el;
+}
+
+_showLiveScore() {
+    const el = this._ensureLiveScoreEl();
+    this._liveScoreDisplayed = 0;
+    const valueEl = el.querySelector('#sg-live-score-value');
+    if (valueEl) valueEl.textContent = '0';
+    el.style.display = '';
+}
+
+_hideLiveScore() {
+    const el = document.getElementById('sg-live-score');
+    if (el) el.style.display = 'none';
+    if (this._liveScoreTweenId) {
+        cancelAnimationFrame(this._liveScoreTweenId);
+        this._liveScoreTweenId = null;
+    }
+}
+
+// ★ スロットリールのように、古い値から新しい値へ素早くカウントアップさせる
+_updateLiveScore(targetTotal) {
+    const valueEl = document.getElementById('sg-live-score-value');
+    if (!valueEl) return;
+
+    if (this._liveScoreTweenId) {
+        cancelAnimationFrame(this._liveScoreTweenId);
+    }
+
+    const startValue = this._liveScoreDisplayed ?? 0;
+    const startTime = performance.now();
+    const duration = 450; // ms
+
+    const step = (now) => {
+        const elapsed = now - startTime;
+        const t = Math.min(1, elapsed / duration);
+        // ★ 減速しながら止まる、リールが回って止まるようなイージング
+        const eased = 1 - Math.pow(1 - t, 3);
+        const current = Math.round(startValue + (targetTotal - startValue) * eased);
+        valueEl.textContent = current;
+        this._liveScoreDisplayed = current;
+
+        if (t < 1) {
+            this._liveScoreTweenId = requestAnimationFrame(step);
+        } else {
+            this._liveScoreDisplayed = targetTotal;
+            this._liveScoreTweenId = null;
+        }
+    };
+    this._liveScoreTweenId = requestAnimationFrame(step);
+}
+
 async start() {
     window.blockResults = [];   // ← ★これが必要
     window.totalSpawnedBlocks = 0;
@@ -337,6 +417,7 @@ async start() {
     if (this.cancelled) return;
 
     this.isRunning = true;
+    this._showLiveScore();
     this.render();
 }
 
@@ -387,6 +468,7 @@ cancelCountdown() {
 
 async stop() {
     this.isRunning = false;
+    this._hideLiveScore();
     window.removeEventListener('resize', this.boundResize);
 
     if (this.canvas.parentNode) {
@@ -422,8 +504,20 @@ async stop() {
 // -------------------------
 // メイン描画ループ
 // -------------------------
+// ★ block.color (hsl(...)形式) に透明度を追加してhsla文字列にするヘルパー
+//   （トレイルのグラデーションで、同じ色を薄い透明度で使うために必要）
+_toRgba(colorStr, alpha) {
+    const m = typeof colorStr === 'string' && colorStr.match(/^hsl\(([^)]+)\)$/i);
+    if (m) return `hsla(${m[1]}, ${alpha})`;
+    // hsl形式でない場合（想定外のフォールバック）はそのまま返す
+    return colorStr;
+}
+
 render() {
     if (!this.isRunning) return;
+
+    // ★ フレームごとの鍵盤位置キャッシュ（同じ鍵盤への重複getBoundingClientRectを防ぐ）
+    this._keyRectCache = new Map();
 
     const pianoCanvas = document.getElementById('piano-canvas');
 
@@ -517,7 +611,14 @@ this.ctx.restore();
         }
         const keyEl = block.keyEl;
         if (keyEl) {
-            const rect = keyEl.getBoundingClientRect();
+            // ★ パフォーマンス対策：同じ鍵盤（同じ音）に複数ブロックが同時に
+            //   存在する場合でも、getBoundingClientRect()は1フレームにつき
+            //   鍵盤ごとに1回だけで済むようキャッシュする
+            let rect = this._keyRectCache.get(keyEl);
+            if (!rect) {
+                rect = keyEl.getBoundingClientRect();
+                this._keyRectCache.set(keyEl, rect);
+            }
             const renderX = (rect.left - viewportRect.left) + (rect.width / 2) - 20;
 
             let opacity = 1.0;
@@ -527,11 +628,33 @@ this.ctx.restore();
                 opacity = 0;
             }
 
-            // --- ブロック描画 ---
+            // --- ブロック描画（幻想的な光の尾を上に伸ばす） ---
             this.ctx.save();
             this.ctx.globalAlpha = opacity;
+
+            // ★ トレイル：ブロックの少し上から、上に向かってフワッと消えるグラデーション
+            //   （ctx.filterでのぼかしは負荷が大きいため使わず、グラデーションの
+            //   透明度の変化だけで柔らかい印象を出す軽量な実装にしている。
+            //   色文字列(hsla)は生成時にキャッシュ済みのものを使い、
+            //   毎フレームの正規表現変換を避けている）
+            const trailHeight = 70;
+            const trailTop = block.y - trailHeight;
+            const trailGradient = this.ctx.createLinearGradient(0, trailTop, 0, block.y + 10);
+            trailGradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
+            trailGradient.addColorStop(0.6, block.trailColorLight);
+            trailGradient.addColorStop(1, block.trailColorHeavy);
+            this.ctx.fillStyle = trailGradient;
+            this.ctx.fillRect(renderX - 2, trailTop, 44, trailHeight + 10);
+
+            // ★ ブロック本体（先端はくっきり見えるようにトレイルの後に描画）
+            //   shadowBlurは負荷が大きいため使わず、白い縁取り(strokeRect)だけで
+            //   輪郭のくっきり感を出す軽量な実装にしている
             this.ctx.fillStyle = block.color;
             this.ctx.fillRect(renderX, block.y, 40, 10);
+
+            this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+            this.ctx.lineWidth = 1.5;
+            this.ctx.strokeRect(renderX, block.y, 40, 10);
             this.ctx.restore();
 
             // --- ハイライト対象 ---
