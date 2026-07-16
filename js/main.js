@@ -932,9 +932,10 @@ setupPianoWorksBoard();
         if (!el) return;
 
         // ★ 見た目でも「使えない」ことが分かるよう、うっすら薄くする
+        // ★ title属性は付けない（ホバー時にブラウザ標準のツールチップが
+        //   出てしまい、クリック時の専用ツールチップと二重に見えるため）
         el.style.opacity = '0.5';
         el.style.cursor = 'not-allowed';
-        el.title = '有償版限定機能となります';
 
         // ★ captureフェーズで最初に処理し、既存のクリック/changeハンドラを止める
         const blockEvent = (e) => {
