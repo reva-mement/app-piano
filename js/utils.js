@@ -111,31 +111,43 @@ export function showPaidFeatureTooltip(anchorEl) {
     tooltip.id = 'paid-feature-tooltip';
     tooltip.className = 'paid-feature-tooltip';
     tooltip.innerHTML = `
+        <div class="paid-feature-tooltip-close" title="閉じる">×</div>
         <div class="paid-feature-tooltip-text">有償版限定機能となります</div>
         <a href="${PAID_FEATURE_LINK}" target="_blank" rel="noopener noreferrer" class="paid-feature-tooltip-link">LevaCraft（BOOTH）はこちら</a>
     `;
     document.body.appendChild(tooltip);
 
-    // ★ ボタンのすぐ下に配置する
+    // ★ ボタンのすぐ下に配置する。画面外にはみ出す場合は自動で調整する。
     const rect = anchorEl.getBoundingClientRect();
-    tooltip.style.top = `${rect.bottom + window.scrollY + 8}px`;
-    tooltip.style.left = `${rect.left + window.scrollX}px`;
+    const tooltipRect = tooltip.getBoundingClientRect();
+    const margin = 8;
 
-    // ★ 外側クリック（またはEsc）で閉じる
-    const close = (e) => {
-        if (e && (tooltip.contains(e.target) || e.target === anchorEl)) return;
-        tooltip.remove();
-        document.removeEventListener('click', close, true);
-        document.removeEventListener('keydown', onKey, true);
-    };
-    const onKey = (e) => {
-        if (e.key === 'Escape') close();
-    };
-    // ★ このクリックイベント自身で即座に閉じてしまわないよう、次のイベントループで登録する
-    setTimeout(() => {
-        document.addEventListener('click', close, true);
-        document.addEventListener('keydown', onKey, true);
-    }, 0);
+    let top = rect.bottom + margin;
+    // ★ 下に置くと画面からはみ出す場合は、ボタンの上に表示する
+    if (top + tooltipRect.height > window.innerHeight) {
+        top = rect.top - tooltipRect.height - margin;
+        if (top < margin) top = margin; // それでも収まらない場合は上端に寄せる
+    }
+
+    let left = rect.left;
+    // ★ 右にはみ出す場合は、右端に収まるよう左にずらす
+    if (left + tooltipRect.width > window.innerWidth - margin) {
+        left = window.innerWidth - tooltipRect.width - margin;
+    }
+    if (left < margin) left = margin;
+
+    tooltip.style.top = `${top}px`;
+    tooltip.style.left = `${left}px`;
+
+    // ★ 「固定」表示：自動では閉じない。×ボタンでのみ閉じる。
+    const closeBtn = tooltip.querySelector('.paid-feature-tooltip-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            tooltip.remove();
+        });
+    }
 }
 
 // ==========================================
