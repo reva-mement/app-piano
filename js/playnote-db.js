@@ -11,8 +11,9 @@ let currentSortKey = null; // 'title' | 'date' | null
 let currentSortDir = 'asc'; // 'asc' | 'desc'
 
 const DB_NAME = 'PianoWorksDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // ★ jukeboxストア追加のためバージョンを上げる
 const STORE_NAME = 'recordings';
+const JUKEBOX_STORE = 'jukebox';
 
 export const playnoteDB = {
     db: null,
@@ -37,6 +38,14 @@ export const playnoteDB = {
                         autoIncrement: true
                     });
                     store.createIndex("date", "latestDate", { unique: false });
+                }
+
+                // ★★★ Jukebox用ストアを追加（取り込んだMIDIファイル一覧） ★★★
+                if (!db.objectStoreNames.contains(JUKEBOX_STORE)) {
+                    db.createObjectStore(JUKEBOX_STORE, {
+                        keyPath: "id",
+                        autoIncrement: true
+                    });
                 }
             };
 
@@ -149,6 +158,59 @@ export const playnoteDB = {
             const tx = this.db.transaction(["studioScores"], "readwrite");
             const store = tx.objectStore("studioScores");
             const req = store.delete(id);
+
+            req.onsuccess = () => resolve();
+            req.onerror = () => reject(req.error);
+        });
+    },
+
+    // --- Jukebox：MIDIファイルの保存 ---
+    // entry = { title, durationMs, midiData(ArrayBuffer), createdAt }
+    async saveJukeboxEntry(entry) {
+        if (!this.db) await this.init();
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction([JUKEBOX_STORE], "readwrite");
+            const store = tx.objectStore(JUKEBOX_STORE);
+            const req = store.add(entry);
+
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+    },
+
+    // --- Jukebox：全件取得 ---
+    async getAllJukeboxEntries() {
+        if (!this.db) await this.init();
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction([JUKEBOX_STORE], "readonly");
+            const store = tx.objectStore(JUKEBOX_STORE);
+            const req = store.getAll();
+
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+    },
+
+    // --- Jukebox：1件取得 ---
+    async getJukeboxEntry(id) {
+        if (!this.db) await this.init();
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction([JUKEBOX_STORE], "readonly");
+            const store = tx.objectStore(JUKEBOX_STORE);
+            const req = store.get(Number(id));
+
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+    },
+
+    // --- Jukebox：削除 ---
+    async deleteJukeboxEntry(id) {
+        if (!this.db) await this.init();
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction([JUKEBOX_STORE], "readwrite");
+            const store = tx.objectStore(JUKEBOX_STORE);
+            const req = store.delete(Number(id));
 
             req.onsuccess = () => resolve();
             req.onerror = () => reject(req.error);
