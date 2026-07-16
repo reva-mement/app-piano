@@ -32,10 +32,14 @@ export function setCharacterImage(fileName, { animate = true, durationMs = 1800 
     const targetSrc = "assets/" + fileName;
     if (imgElement.src.includes(fileName)) return; // 既に同じ画像なら何もしない
 
-    // Vite環境などでassets/が見つからない場合の最終バックアップ
+    // ★ 修正："/" + fileName という絶対パスへのフォールバックは、
+    //   GitHub Pagesのようにサブパス配信（例: https://xxx.github.io/app-piano/）の環境では
+    //   ドメイン直下を指してしまい、常に404になる上コンソールにエラーが溜まり続けるだけだったため撤去。
+    //   assets/ 以下の相対パスは <base href="./"> により常に正しいページ基準で解決されるので、
+    //   ここでは読み込み失敗時に一度だけ警告を出すだけに留める。
     imgElement.onerror = () => {
-        console.error(`❌ Failed to load image at ${imgElement.src}. Trying absolute path...`);
-        imgElement.src = "/" + fileName;
+        console.error(`❌ Failed to load image at ${imgElement.src}（assetsフォルダにファイルが存在するか確認してください）`);
+        imgElement.onerror = null; // 無限リトライ防止
     };
 
     if (!animate) {
@@ -86,11 +90,24 @@ export async function initThoughtEngine() {
         // ★ 起動直後の初期表示は neutral.png（天候取得やモード開始より前に確定させる）
         setCharacterImage('neutral.png', { animate: false });
 
-        // ★ 天気の取得が終わり次第、最初の1回だけ「天気固定」の画像・セリフに更新する
-        //   （geolocation許可待ち等で多少時間がかかることがあるため、少し余裕を持たせる）
-        setTimeout(() => {
-            triggerInitialWeatherThought();
-        }, 1500);
+        // ★ 初回訪問かどうかを判定する（main.js の showFirstVisitHelpTip() と同じキーを見る。
+        //   ここでは読み取るだけで、実際にフラグを立てるのは main.js 側の責務のまま）
+        const isFirstVisit = !localStorage.getItem('pw_seen_help_tip');
+
+        if (isFirstVisit) {
+            // ★ 初回訪問時は、天気セリフより先にウェルカムメッセージを表示する。
+            //   ローディング画面（4秒表示＋2秒フェード＝計6秒）が完全に終わるまで待つ。
+            setTimeout(() => {
+                setCharacterImage('smiling.png');
+                typeWriterEffect('こんにちは！PianoWorksへようこそ。基本操作は右上のヘルプボタンから確認できます！');
+            }, 6300);
+        } else {
+            // ★ 天気の取得が終わり次第、最初の1回だけ「天気固定」の画像・セリフに更新する
+            //   （geolocation許可待ち等で多少時間がかかることがあるため、少し余裕を持たせる）
+            setTimeout(() => {
+                triggerInitialWeatherThought();
+            }, 1500);
+        }
 
         // UI（黒板）のレンダリング完了を待ってから箱を確認
         setTimeout(() => {
@@ -103,6 +120,12 @@ export async function initThoughtEngine() {
         }, 2000); 
         
         setTimeout(async () => {
+            // ★ 初回訪問時は、上のウェルカムメッセージが typeWriterEffect の
+            //   通常のチェーン（表示保持→フェード→次のサイクル）に乗って
+            //   自動的に通常サイクルへ引き継がれるため、ここでは何もしない
+            //   （両方が同時に動くと表示が競合してしまうため）。
+            if (isFirstVisit) return;
+
             // ★ ロード後は、まず季節にちなんだセリフを一度だけ試す
             //   （天気がClearでない等の理由で表示できなければ、通常サイクルへ）
             const shown = await triggerSeasonalThought();
@@ -160,6 +183,17 @@ async function generateUnifiedMutter() {
     // 取得の成否に関わらず、現在のカテゴリに基づいて画像を更新
     // これにより、APIが切れても「赤い箱」の中身が消えたり止まったりするのを防ぎます
     updateWeatherVisual(currentCategory);
+
+    // ★ 約10%の確率で、通常のセリフの代わりにLevaCraft案内を表示する。
+    //   天気取得・ビジュアル更新は上で必ず一度実行済みなので、ここでは
+    //   文言と画像（smiling.png）だけを上書きする（他の処理はスキップしない）。
+    if (Math.random() < 0.1) {
+        const promoText = "LevaCraftのことをもっと知りたいんだったら、右上の歯車のボタンに入り口がありますよ。";
+        setCharacterImage('smiling.png');
+        lastThoughtText = promoText;
+        typeWriterEffect(promoText);
+        return;
+    }
 
     // ★ Rain（window_rainy.png）/ Clear（window_sunny.png）表示中は、
     //   他の候補と混ぜず、天気にちなんだセリフを優先して使う
