@@ -227,7 +227,7 @@
 /* 1. プレイリストアイコン（本） */
 .playlist-icon-wrapper {
     position: fixed;   
-    bottom: 525px; /* ★ 合計25px上に移動（500px → 520px → 525px） */
+    bottom: 475px; /* ★ 合計25px上に移動（500px → 520px → 525px） */
     right: 50px;      /* イーゼルと重ならないよう、この数値を調整してください */
     width: 120px; 
     z-index: 10000;    
