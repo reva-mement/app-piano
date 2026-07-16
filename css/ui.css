@@ -90,7 +90,7 @@
 }
 #studio-song-display {
     position: absolute;
-    top: 130px; left: 405px;
+    top: 90px; left: 405px;
     width: 200px; height: 28px;
     display: flex;
     align-items: center;
