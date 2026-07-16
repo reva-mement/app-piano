@@ -228,7 +228,7 @@
 .playlist-icon-wrapper {
     position: fixed;   
     bottom: 525px; /* ★ 合計25px上に移動（500px → 520px → 525px） */
-    right: 50px;      /* イーゼルと重ならないよう、この数値を調整してください */
+    right: 100px;      /* イーゼルと重ならないよう、この数値を調整してください */
     width: 120px; 
     z-index: 10000;    
     cursor: pointer; 
@@ -266,7 +266,7 @@
     bottom: 0;
     right: -55px;          /* コンテナの右端（画面右端）を基準にする */
     width: 250px; 
-    height: 300px;     /* クリック判定の高さもしっかり確保 */
+    height: 350px;     /* クリック判定の高さもしっかり確保 */
     cursor: pointer;
     pointer-events: auto; 
     transform: translateX(-50px); /* ★これで画面内に引き戻す（数値は調整してください） */
