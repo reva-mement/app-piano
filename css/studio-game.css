@@ -1,0 +1,308 @@
+/* studio-game.css */
+#sg-canvas-container {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 5 !important;
+    pointer-events: none !important;
+    /* transparentを削除し、JSで制御しやすくする */
+    background: transparent; 
+    transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+}
+
+#sg-canvas-element {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    background-color: transparent !important; 
+}
+
+/* ESC中断ガイド文言（左上・Sessionモードと同じ表現） */
+#sg-esc-hint {
+    position: fixed !important;
+    top: 20px !important;
+    left: 24px !important;
+    z-index: 6 !important;
+    font-family: 'Kiwi Maru', serif !important;
+    font-size: 14px; /* ★ ここでフォントサイズを調整できます */
+    color: #e0d8c8;
+    opacity: 0;
+    pointer-events: none !important;
+}
+
+#sg-esc-hint.sg-esc-hint-flash {
+    animation: escHintFlashFade 5s ease forwards;
+}
+
+/* 0.3秒で軽く光り、1秒手前で落ち着き、3秒保持してから徐々に消える */
+@keyframes escHintFlashFade {
+    0%   { opacity: 0; }
+    6%   { opacity: 0.9; }   /* ★ 強すぎない一瞬の光り */
+    20%  { opacity: 0.55; }  /* 落ち着いた表示に移行 */
+    60%  { opacity: 0.55; }  /* ここまで（約3秒）表示を保持 */
+    100% { opacity: 0; }     /* 残り2秒でゆっくり消える */
+}
+
+/* 落下するブロックのベーススタイル */
+.falling-block {
+    position: absolute;
+    width: 50px; /* 必要に応じて調整 */
+    height: 20px;
+    background-color: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    border-radius: 4px;
+    top: -30px; /* 画面外からスタート */
+    animation: fall 2s linear forwards; /* 2秒で落ちる */
+}
+
+/* ====== ESC/曲終了時：スコアが左上から飛び出す演出 ====== */
+.sg-score-popup {
+    position: fixed;
+    top: 40px;
+    left: 40px;
+    z-index: 7;
+    font-family: 'Kiwi Maru', serif;
+    text-align: left;
+    transform-origin: top left;
+    opacity: 0;
+    pointer-events: none;
+    animation: scorePopIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ★ SCOREの上に表示する曲タイトル */
+.sg-score-popup-title {
+    font-size: 15px;
+    color: #cfc4ad;
+    margin-bottom: 2px;
+    max-width: 320px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sg-score-popup-label {
+    font-size: 16px;
+    letter-spacing: 2px;
+    color: #e0d8c8;
+}
+
+/* ★ ハイスコア更新時のみ、SCOREラベルとスコア数字の間に表示。
+   スコア本体より0.2秒遅れてフェード＋ポップインする。 */
+.sg-score-popup-highscore {
+    font-size: 20px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    /* ゴールドより少し白っぽい色に */
+    color: #fff6da;
+    text-shadow: 0 0 10px rgba(255, 246, 218, 0.85), 0 0 18px rgba(255, 215, 0, 0.5);
+    opacity: 0;
+    animation: highScorePopIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    animation-delay: 0.2s;
+}
+
+@keyframes highScorePopIn {
+    0%   { opacity: 0; transform: translateY(6px) scale(0.85); }
+    60%  { opacity: 1; transform: translateY(-2px) scale(1.05); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.sg-score-popup-value {
+    font-size: 64px; /* ★ 48px→64pxに拡大して視認性を上げる */
+    font-weight: bold;
+    color: gold;
+    text-shadow: 0 0 12px rgba(255, 215, 0, 0.6), 0 0 28px rgba(255, 215, 0, 0.35);
+}
+
+/* 左上の画面外から、少し弾みながら定位置に収まる */
+@keyframes scorePopIn {
+    0% {
+        opacity: 0;
+        transform: translate(-80px, -80px) scale(0.3) rotate(-10deg);
+    }
+    60% {
+        opacity: 1;
+        transform: translate(6px, 6px) scale(1.08) rotate(2deg);
+    }
+    80% {
+        transform: translate(-2px, -2px) scale(0.97) rotate(-1deg);
+    }
+    100% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1) rotate(0deg);
+    }
+}
+
+/* スコア下の下線：左から右へ引かれ、そのまま留まる */
+.sg-score-underline {
+    position: relative;
+    height: 4px;
+    margin-top: 6px;
+    width: 100%;
+    background: linear-gradient(90deg, gold, #fff8dc);
+    border-radius: 2px;
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.7);
+    transform-origin: left center;
+    opacity: 0;
+    transform: scaleX(0);
+    animation: scoreUnderlineDraw 0.6s ease-out forwards;
+    animation-delay: 0.8s; /* ポップイン（0.8s）が終わってから引き始める */
+}
+
+@keyframes scoreUnderlineDraw {
+    0%   { transform: scaleX(0); opacity: 0; }
+    10%  { opacity: 1; }
+    100% { transform: scaleX(1); opacity: 1; }
+}
+
+/* 漢字の「はね」のように、線の右端から右上へ大きく跳ねる */
+.sg-score-hane {
+    position: absolute;
+    right: -1px;
+    bottom: 0;
+    width: 3px;
+    height: 34px;
+    background: linear-gradient(to top, gold, rgba(255, 248, 220, 0));
+    border-radius: 2px;
+    transform-origin: bottom center;
+    transform: rotate(40deg) scaleY(0);
+    opacity: 0;
+    animation: scoreHaneFlick 0.35s cubic-bezier(0.3, 1.4, 0.5, 1) forwards;
+    animation-delay: 1.4s; /* 下線が引き終わるタイミング（0.8s + 0.6s） */
+}
+
+/* 線の右端を起点に、勢いよく右上へ払う（跳ねる） */
+@keyframes scoreHaneFlick {
+    0%   { transform: rotate(40deg) scaleY(0);    opacity: 0; }
+    15%  { opacity: 1; }
+    70%  { transform: rotate(40deg) scaleY(1.2);  opacity: 1; }
+    100% { transform: rotate(40deg) scaleY(1);    opacity: 1; }
+}
+
+/* ====== スコアテーブルを格子状にする ====== */
+.score-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background: #111;
+    color: #eee;
+}
+
+.score-table th,
+.score-table td {
+    border: 1px solid #444;
+    height: 120px;
+    padding: 10px 10px;
+    text-align: center;
+}
+
+/* 先頭行（ヘッダー）を固定 */
+.score-table thead th {
+    position: sticky;
+    top: 0;
+    background: #222;   /* 背景を指定しないとスクロール時に透ける */
+    z-index: 5;
+    height: 40px;       /* ← 高さ固定 */
+    padding: 0 8px;     /* 高さを固定したいので上下 padding は 0 */
+    line-height: 12px;  /* テキストを中央に寄せる */
+}
+
+.score-table thead th {
+    background: #222;
+    font-weight: bold;
+}
+
+.score-table tbody tr:nth-child(even) {
+    background: #181818;
+}
+
+.score-table tbody tr:hover {
+    background: #262626;
+}
+
+/* ====== スコアテーブル列幅 ====== */
+
+/* No. */
+.score-table th:nth-child(1),
+.score-table td:nth-child(1) {
+    width: 40px;
+}
+
+/* TITLE */
+.score-table th:nth-child(2),
+.score-table td:nth-child(2) {
+    width: 110px; /* ← 好きに調整してOK */
+}
+
+/* Accuracy */
+.score-table th:nth-child(3),
+.score-table td:nth-child(3) {
+    width: 80px;
+}
+
+/* DATE */
+.score-table th:nth-child(4),
+.score-table td:nth-child(4) {
+    width: 90px;
+}
+
+/* GRAPH */
+.score-table th:nth-child(5),
+.score-table td:nth-child(5) {
+    width: 200px;
+    overflow: hidden; /* ★ グラフがセルの外にはみ出さないようクリップする */
+}
+
+/* DEL */
+.score-table th:nth-child(6),
+.score-table td:nth-child(6) {
+    width: 50px;
+}
+
+/* ===== Sparkline 2-canvas layout ===== */
+.spark-wrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    max-height: 100px; /* ★ セルの高さ(120px)からはみ出していた約20px分を抑える */
+    overflow: hidden;
+}
+
+.spark-label {
+    width: 22px;
+    height: 100%;
+    pointer-events: none;
+}
+
+.spark-graph {
+    flex: 1;
+    margin-left: 4px;
+    height: 100%;
+}
+
+.score-studio-btn {
+    margin-top: 4px;
+    font-size: 11px;
+    padding: 2px 6px;
+    cursor: pointer;
+
+    /* ★ ツールチップ（#score-tooltip）に近い配色に統一 */
+    background: rgba(20, 20, 20, 0.95);
+    border: 1px solid #b87333;
+    border-radius: 4px;
+    color: #fff;
+}
+
+.score-studio-btn:hover {
+    background: rgba(184, 115, 51, 0.25); /* ★ ホバー時にほんのり縁取り色を差す */
+}
+
+
+@keyframes fall {
+    from { transform: translateY(0); opacity: 0; }
+    10% { opacity: 1; }
+    to { transform: translateY(100vh); opacity: 0; }
+}
