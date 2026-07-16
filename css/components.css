@@ -263,7 +263,7 @@
 .playlist-easel {
     display: block;
     position: absolute; 
-    bottom: 130px;          /* コンテナの右端（画面右端）を基準にする */
+    bottom: 120px;          /* コンテナの右端（画面右端）を基準にする */
     right: -75px;
     width: 250px; 
     height: 300px;     /* クリック判定の高さもしっかり確保 */
