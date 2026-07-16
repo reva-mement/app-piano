@@ -538,7 +538,7 @@ export function stopSessionLogic() {
     // 3. 鍵盤UIのセッション特有クラスのみを剥がし、通常モードへ復帰
     document.querySelectorAll('.key').forEach(el => {
         // セッション中に付与したクラスだけを確実に削除
-        el.classList.remove('active', 'from-user', 'from-ai', 'is-veiled');
+        el.classList.remove('active', 'from-user', 'from-ai', 'is-veiled', 'is-veiled-near', 'is-veiled-far');
         // key-assigned や key-label は通常モードの updateIndividualMapping が管理するため、
         // ここで下手に消さず、関数を呼び出して通常状態へ強制同期させます
     });

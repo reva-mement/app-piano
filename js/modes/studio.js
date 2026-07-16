@@ -431,6 +431,9 @@ window.handlePlayProgress = async function(btn, loadedMidiData) {
 
         console.log("Studio mode: playing notes from DB");
         window.isStudioMode = true;
+        // ★ GAME ON中であることを示す汎用クラス（カスタム背景の有無に関わらず常に付与）
+        //   CSS側で「GAME ON中だけ見た目を変えたい」場合の判定に使う
+        document.body.classList.add('studio-game-active');
 
         // ★ ブロック判定(isNoteInView)の基準となる key-assigned 範囲を同期
         if (typeof window.updateIndividualMapping === 'function') {
@@ -451,14 +454,19 @@ container.style.cssText = `
     left: 0 !important;
     width: 100vw !important;
     height: 100vh !important;
-    z-index: 1 !important;
+    z-index: 0 !important;
     pointer-events: none !important;
     display: block !important;
     visibility: visible !important;
-    opacity: 1 !important;
+    opacity: 0 !important;
     background-color: rgba(0, 0, 0, ${window.gameOverlayOpacity ?? 0.95}) !important;
     isolation: isolate !important;
+    transition: opacity 1.5s ease-in !important;
 `;
+        // ★ 強制リフローしてから不透明度を上げることで、
+        //   即時表示ではなくease-inでゆっくり暗転させる
+        void container.offsetHeight;
+        container.style.setProperty('opacity', '1', 'important');
 
 
         if (!window.gameEngine) {
@@ -625,6 +633,8 @@ if (!isMidiLoaded || currentFileName !== lastLoadedFileName) {
     // --- 3. Studio モード（GAME ON）の場合 ---
     if (isGuideOn) {
         window.isStudioMode = true; // Studio モードフラグ ON
+        // ★ GAME ON中であることを示す汎用クラス（カスタム背景の有無に関わらず常に付与）
+        document.body.classList.add('studio-game-active');
 
         console.log("Guide Mode is ON, starting StudioGameEngine");
 
@@ -648,14 +658,19 @@ if (!isMidiLoaded || currentFileName !== lastLoadedFileName) {
             left: 0 !important;
             width: 100vw !important;
             height: 100vh !important;
-            z-index: 1 !important;
+            z-index: 0 !important;
             pointer-events: none !important;
             display: block !important;
             visibility: visible !important;
-            opacity: 1 !important;
+            opacity: 0 !important;
             background-color: rgba(0, 0, 0, ${window.gameOverlayOpacity ?? 0.95}) !important;
             isolation: isolate !important;
+            transition: opacity 1.5s ease-in !important;
         `;
+        // ★ 強制リフローしてから不透明度を上げることで、
+        //   即時表示ではなくease-inでゆっくり暗転させる
+        void container.offsetHeight;
+        container.style.setProperty('opacity', '1', 'important');
 
         // エンジン生成
         if (!window.gameEngine) {
@@ -802,6 +817,7 @@ export function forceStopStudioIfRunning() {
 export function handleStopMIDI() {
     stopLookaheadScanner(); // ★ 先読みスキャナーも停止
     document.body.classList.remove('game-bg-active'); // ★ 透過演出も解除
+    document.body.classList.remove('studio-game-active'); // ★ GAME ON汎用フラグも解除
     // ★ ESC中断・曲完了どちらもここを通るので、背景表示もここでdefaultに戻す
     //   （URLの設定自体は消さないので、次回のGAME ON開始時にはまた使われる）
     if (typeof window.showDefaultBackground === 'function') {
@@ -846,9 +862,12 @@ export function handleStopMIDI() {
 // 黒いオーバーレイ（#sg-canvas-container）を即座に消すのではなく、
 // 指定時間（デフォルト5秒）かけてゆっくり透明にし、
 // 背後のメイン画面がじわじわ見えてくるようにする。
-function fadeOutStudioCanvas(durationMs = 5000) {
+function fadeOutStudioCanvas(durationMs = 5000, onComplete = null) {
     const container = document.getElementById('sg-canvas-container');
-    if (!container) return;
+    if (!container) {
+        if (typeof onComplete === 'function') onComplete();
+        return;
+    }
 
     container.style.transition = `opacity ${durationMs}ms ease-in-out`;
     // 直前のスタイル変更を確実に反映させてから opacity を変える（transitionが効かない対策）
@@ -866,6 +885,10 @@ function fadeOutStudioCanvas(durationMs = 5000) {
         //   （次回セッションで重複表示されないように、ここで確実に除去する）
         const popup = container.querySelector('.sg-score-popup');
         if (popup) popup.remove();
+
+        // ★ 完全に明るさが戻ったタイミングで呼び出し元に通知する
+        //   （キャラクターのスコア発表を、暗転が明るくなりきってから行うため）
+        if (typeof onComplete === 'function') onComplete();
     }, durationMs);
 }
 
@@ -900,27 +923,57 @@ function showScorePopup(score, title, holdMs = 500, isHighScore = false) {
 
         const displayTitle = stripMidiExtension(title);
 
+        // ★ ハイスコア演出用：スコアの数字を1桁ずつspanで分割する。
+        //   各桁に少しずつtransition-delayをずらしておくことで、
+        //   後でまとめてクラスを付与するだけで「左の桁から」明るくなる。
+        const scoreDigitsHtml = String(score)
+            .split('')
+            .map((ch, i) => `<span class="sg-score-digit" style="transition-delay:${(i * 0.06).toFixed(2)}s">${ch}</span>`)
+            .join('');
+
         const popup = document.createElement('div');
         popup.className = 'sg-score-popup';
+        // ★ 暗幕(#sg-canvas-container)より確実に手前に出るよう強制指定
+        popup.style.setProperty('z-index', '50000', 'important');
         popup.innerHTML = `
             ${displayTitle ? `<div class="sg-score-popup-title">${displayTitle}</div>` : ''}
             <div class="sg-score-popup-label">SCORE</div>
             ${isHighScore ? `<div class="sg-score-popup-highscore">High Score!</div>` : ''}
-            <div class="sg-score-popup-value">${score}</div>
+            <div class="sg-score-popup-value">${scoreDigitsHtml}</div>
             <div class="sg-score-underline">
                 <span class="sg-score-hane"></span>
             </div>
         `;
         container.appendChild(popup);
 
+        // ★ ハイスコア時：他の文字が現れ終わった0.7秒後に、
+        //   数字を左の桁から順になめらかに明るい色へ変化させる
+        if (isHighScore) {
+            setTimeout(() => {
+                popup.querySelectorAll('.sg-score-digit').forEach(el => {
+                    el.classList.add('sg-digit-bright');
+                });
+            }, 700);
+        }
+
         // 下線が引かれ、右端から「はね」が跳ね上がる演出が
         // 終わるのを待ってから resolve する
         const hane = popup.querySelector('.sg-score-hane');
+        let resolved = false;
+        const finish = () => {
+            if (resolved) return;
+            resolved = true;
+            resolve(); // ★ popup.remove() はしない（container と一緒にフェードさせるため）
+        };
         hane.addEventListener('animationend', () => {
-            setTimeout(() => {
-                resolve(); // ★ popup.remove() はしない（container と一緒にフェードさせるため）
-            }, holdMs);
+            setTimeout(finish, holdMs);
         }, { once: true });
+
+        // ★★★ 安全策 ★★★
+        // .sg-score-hane に対応するCSSアニメーションが無い/読み込めていない場合、
+        // animationend が永遠に発火せず、画面が暗転したまま固まってしまう。
+        // CSSの有無に関わらず必ず先に進めるよう、一定時間後に強制的に resolve する。
+        setTimeout(finish, 2000 + holdMs);
     });
 }
 
@@ -945,6 +998,7 @@ async function finishStudioGameSession() {
     const blockResults = window.blockResults || [];
     let scoreToShow = 0; // ★ ポップアップに表示するスコア
     let isHighScore = false; // ★ 今回のプレイが自己ベスト更新かどうか
+    let resultLine = ''; // ★ キャラクターに発表させるスコア・正答率の文言
 
     // ★★★ Scoreポップアップに表示する曲タイトル（両入口共通）★★★
     // ・Studio Archiveの「▶GAME ON」から入った場合 → window.activeScoringRecord.title
@@ -1031,16 +1085,15 @@ async function finishStudioGameSession() {
                 isTrendingUp = increases >= Math.ceil((recentScores.length - 1) * 0.6);
             }
 
-            // ★ GAME ON終了時、必ずsmiling.pngで、スコア・正答率を報告する。
-            //   ハイスコア・上昇傾向の時は、称賛のひとことを添える。
-            setCharacterImage('smiling.png');
-            let resultLine = `スコアは${result.totalScore}、正答率${hitAccuracy.toFixed(1)}%でした。`;
+            // ★ GAME ON終了時のスコア・正答率報告文を組み立てる。
+            //   実際にキャラクターへ反映するのは、暗転が完全に明るく戻った後
+            //   （fadeOutStudioCanvas完了後）に行う。
+            resultLine = `スコアは${result.totalScore}、正答率${hitAccuracy.toFixed(1)}%でした。`;
             if (isHighScore) {
                 resultLine += ' 自己ベスト更新です、すごいですね！';
             } else if (isTrendingUp) {
                 resultLine += ' 最近スコアが伸びていますね、その調子です！';
             }
-            setBubbleText(resultLine);
 
             // ★★★ playHistory（アーカイブのグラフ用：「プレイ単位」の全記録）★★★
             // これは1プレイ = 1点。history（1プレイの中のブロックごとの得点）とは全く別物。
@@ -1125,7 +1178,14 @@ async function finishStudioGameSession() {
 
     // ★ スコアが左上から飛び出す演出 → 表示が終わってから初めてフェードアウトを開始する
     await showScorePopup(scoreToShow, songTitleForDisplay, 500, isHighScore);
-    fadeOutStudioCanvas(5000);
+    fadeOutStudioCanvas(5000, () => {
+        // ★ 暗転が完全に明るく戻ったタイミングで、smiling.pngとともにスコアを発表する
+        //   （1ブロックも弾かなかった場合はresultLineが空のまま＝発表しない、元の挙動を踏襲）
+        if (resultLine) {
+            setCharacterImage('smiling.png');
+            setBubbleText(resultLine);
+        }
+    });
 
     // フラグ類リセット
     window.isPlaying = false;
@@ -1558,7 +1618,7 @@ window.addEventListener('keydown', (event) => {
         display: flex;
         justify-content: center;
         align-items: center;
-        z-index: 99999;
+        z-index: 200300;
     `;
     confirmBox.innerHTML = `
         <div class="pw-select-container" style="width: 360px; min-height: 0;">
