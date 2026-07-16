@@ -45,7 +45,7 @@ input, textarea {
 
 .blackboard-container {
     position: fixed; z-index: 100;
-    left: 25px; bottom: 300px;
+    left: 25px; bottom: 250px;
     width: 380px; height: 440px;
     background: url('../assets/blackboard.png') no-repeat center / contain;
     pointer-events: none;
