@@ -14,7 +14,7 @@
 }
 .control-panel-container {
     position: absolute;
-    left: 50%; top: calc(13% - 20px); /* ★ 20px上にずらす */
+    left: 50%; top: calc(20% - 20px); /* ★ 20px上にずらす */
     transform: translate(-50%, -30%);
     width: 100vw;
     z-index: 100;
@@ -46,25 +46,12 @@
    Session/Studioのボタンが下のタグに隠れてしまう。
    そこで明示的に「上にあるタグほど手前」になるようz-indexを固定する。
    （.active になった時は既存の z-index:10 がこれより優先される） */
-#tag-perform { position: relative; z-index: 3; }
 #tag-session { position: relative; z-index: 2; }
 #tag-studio  { position: relative; z-index: 1; }
 
 /* 刻印の内容と位置 */
-#tag-perform::before { 
-    content: "Perform Mode"; 
-    top: 75px; left: 105px; font-size: 20px; 
-    color: #f0f0f0; opacity: 1.0; 
-}
 #tag-session::before { content: "Session Mode"; top: 88px; left: 70px; font-size: 17px; }
 #tag-studio::before  { content: "Studio Mode"; top: 60px; left: 65px; font-size: 19px; }
-
-/* 【PERFORM】内パーツ */
-.yt-import-group {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
 
 /* 【STUDIO】内パーツ */
 #tag-studio .play-stamp,
@@ -226,8 +213,15 @@
 .key.key-assigned::after {
     opacity: 0;
 }
-.key.is-veiled {
+/* ★ パフォーマンス対策：表示範囲の境界から近い鍵盤(is-veiled-near)だけに
+   コストの高いblurフィルターを残し、遠い鍵盤(is-veiled-far)はgrayscaleのみの
+   軽い表現にする。GPU負荷の高いblurの対象を大幅に減らせる。 */
+.key.is-veiled-near {
     filter: grayscale(0.5) blur(0.5px);
+    transition: filter 0.4s ease;
+}
+.key.is-veiled-far {
+    filter: grayscale(0.5);
     transition: filter 0.4s ease;
 }
 .key.key-assigned {
@@ -250,7 +244,7 @@
 
     /* --- ここから位置調整 --- */
     /* 画面下端からの距離 */
-    bottom: 360px; 
+    bottom: 390px; 
     /* 画面左端からの距離 */
     left: 820px; 
     /* ★ #tag-studio (translateY(70px)) と同じ移動量に揃えて追従させる */
@@ -261,54 +255,48 @@
 }
 
 #studio-seek-slider {
-    -webkit-appearance: none; /* 標準の見た目をリセット */
+    -webkit-appearance: none;
     appearance: none;
-    background: #333; /* レールの色（黒鍵のような重厚な黒） */
     width: 110%;
-    height: 6px;      /* 少し細くして精密感を出す */
-    border-radius: 5px;
+    background: transparent;
+    cursor: pointer;
     outline: none;
-    box-shadow: inset 0 1px 3px rgba(0,0,0,0.8); /* レールの凹み感 */
-/* 3. ブラウザ標準の挙動を邪魔しないよう、スライダー自体のz-indexも指定 */
     position: relative;
     z-index: 1000;
+}
+
+#studio-seek-slider::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 6px;
+    background: #1a1a1a;
+    border-radius: 3px;
 }
 
 /* つまみ部分（Google Chrome, Edge, Safari用） */
 #studio-seek-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
-    appearance: none;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: radial-gradient(
-        circle at 30% 30%, 
-        #d4af37 0%,
-        #8a6d3b 45%,
-        #3d2b1f 100%
-    );
-    cursor: pointer;
-    box-shadow: 
-        0 2px 5px rgba(0,0,0,0.7), 
-        0 0 3px rgba(138, 109, 59, 0.3);
-    border: 1px solid #2a1f15;
-    transition: transform 0.1s ease;
-    margin-top: -6px; 
+    height: 24px;
+    width: 12px;
+    /* ★ 標準よりわずかに暗めのゴールドに調整 */
+    background: linear-gradient(145deg, #b8923a, #6b4423);
+    border-radius: 2px;
+    margin-top: -9px;
+    border: 1px solid var(--color-wood-frame);
+}
+
+#studio-seek-slider::-moz-range-track {
+    width: 100%;
+    height: 6px;
+    background: #1a1a1a;
+    border-radius: 3px;
 }
 
 #studio-seek-slider::-moz-range-thumb {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: radial-gradient(
-        circle at 30% 30%, 
-        #d4af37 0%,
-        #8a6d3b 45%,
-        #3d2b1f 100%
-    );
-    cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.7);
-    border: 1px solid #2a1f15;
+    height: 24px;
+    width: 12px;
+    background: linear-gradient(145deg, #b8923a, #6b4423);
+    border-radius: 2px;
+    border: 1px solid var(--color-wood-frame);
 }
 
 #studio-time-display {
