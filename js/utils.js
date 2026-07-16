@@ -93,6 +93,51 @@ export function showLocalOnlyToast(featureLabel) {
     }
 }
 
+/**
+ * ★ Web(体験)版限定：有料版限定機能のボタンを押した時に、
+ *   ボタンのすぐ下に「有償版限定機能となります」＋LevaCraft(BOOTH)へのリンクを
+ *   表示するツールチップ。外側クリックで閉じる。
+ */
+const PAID_FEATURE_LINK = "https://levacraft.booth.pm/?_gl=1*1haa0h6*_ga*MTEzOTAzOTI4My4xNzg0MDI5ODg4*_ga_RWT2QKJLDC*czE3ODQyMTE1NTQkbzMkZzEkdDE3ODQyMTE1NzEkajQzJGwwJGgw";
+
+export function showPaidFeatureTooltip(anchorEl) {
+    if (!anchorEl) return;
+
+    // ★ 既に表示中のツールチップがあれば消す
+    const existing = document.getElementById('paid-feature-tooltip');
+    if (existing) existing.remove();
+
+    const tooltip = document.createElement('div');
+    tooltip.id = 'paid-feature-tooltip';
+    tooltip.className = 'paid-feature-tooltip';
+    tooltip.innerHTML = `
+        <div class="paid-feature-tooltip-text">有償版限定機能となります</div>
+        <a href="${PAID_FEATURE_LINK}" target="_blank" rel="noopener noreferrer" class="paid-feature-tooltip-link">LevaCraft（BOOTH）はこちら</a>
+    `;
+    document.body.appendChild(tooltip);
+
+    // ★ ボタンのすぐ下に配置する
+    const rect = anchorEl.getBoundingClientRect();
+    tooltip.style.top = `${rect.bottom + window.scrollY + 8}px`;
+    tooltip.style.left = `${rect.left + window.scrollX}px`;
+
+    // ★ 外側クリック（またはEsc）で閉じる
+    const close = (e) => {
+        if (e && (tooltip.contains(e.target) || e.target === anchorEl)) return;
+        tooltip.remove();
+        document.removeEventListener('click', close, true);
+        document.removeEventListener('keydown', onKey, true);
+    };
+    const onKey = (e) => {
+        if (e.key === 'Escape') close();
+    };
+    // ★ このクリックイベント自身で即座に閉じてしまわないよう、次のイベントループで登録する
+    setTimeout(() => {
+        document.addEventListener('click', close, true);
+        document.addEventListener('keydown', onKey, true);
+    }, 0);
+}
+
 // ==========================================
 // 2. 音楽理論モジュール (THEORY)
 // ==========================================
