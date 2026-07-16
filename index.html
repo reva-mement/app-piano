@@ -58,7 +58,7 @@
     <iframe id="video-background-iframe" allow="autoplay; encrypted-media" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:0; border:none; pointer-events:none;"></iframe>
 
     <!-- ★★★ 診断用：タグの仕組みと完全に切り離し、確実に見える固定座標に強制表示 --- -->
-    <div id="midi-search-bar" style="display: flex !important; position: fixed !important; top: 45px !important; left: 440px !important; z-index: 150 !important; gap: 8px; width: 590px;">
+    <div id="midi-search-bar" style="display: flex !important; position: fixed !important; top: 50px !important; left: 440px !important; z-index: 150 !important; gap: 8px; width: 590px;">
         <input type="text" id="midi-search-input" placeholder="ここからMIDIを検索することができます" style="flex: 1; min-width: 0; padding: 10px 14px; background: rgba(0,0,0,0.4); border: 1px solid #634a35; border-radius: 4px; color: #e0d0b0; font-size: 0.85rem;">
         <button id="midi-search-btn" class="btn-stamp-base" style="min-width: 100px;">Search</button>
     </div>
@@ -259,6 +259,13 @@
             </div>
 
             <div class="settings-group">
+                <span class="settings-group-label">Jukebox</span>
+                <div class="settings-item help-text">
+                    お手持ちのMIDIファイルを取り込んで、曲名・長さの一覧から選んで再生できる機能です。GAME ONやスコア記録とは関係なく、純粋に曲を聴きたい時に使えます。再生前には3秒のカウントダウンが入ります。不要になった曲は一覧からいつでも削除できます。
+                </div>
+            </div>
+
+            <div class="settings-group">
                 <span class="settings-group-label">設定</span>
                 <div class="settings-item help-text">
                     演奏視界の広さ（鍵盤上でハイライトされる音域の範囲）や、GAME ON時の背景画面のカスタマイズなど、アプリ全体の見た目や挙動を調整できます。
@@ -277,6 +284,17 @@
                 <span class="settings-group-label">MIDI Import</span>
                 <div class="settings-item help-text">
                     お手持ちのMIDIファイル（.mid）を読み込んで、Studioモードで練習できるようにする機能です。読み込んだ曲は自動的にStudio Archiveにも登録されます。
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <span class="settings-group-label">お問い合わせ</span>
+                <div class="settings-item help-text">
+                    不具合報告やご意見など、お気軽にお問い合わせください。
+                    <br><br>
+                    <a href="mailto:levacraft20@gmail.com" class="btn-stamp-base" style="display: inline-flex; align-items: center; justify-content: center; text-decoration: none; min-width: 200px; height: 40px; font-size: 0.85rem; background: linear-gradient(to bottom, #4a3526, #3d2b1f); border-color: #634a35; color: #e0d0b0;">
+                        お問い合わせはこちら
+                    </a>
                 </div>
             </div>
 
@@ -340,6 +358,7 @@
         <div class="pw-select-body">
             <button id="pw-open-playlist" class="btn-stamp-base pw-select-btn">Session Archive</button>
             <button id="pw-open-score" class="btn-stamp-base pw-select-btn">Studio Archive</button>
+            <button id="pw-open-jukebox" class="btn-stamp-base pw-select-btn">Jukebox</button>
         </div>
         <div class="pw-select-footer">
             <button id="pw-select-close" class="btn-stamp-base">CANCEL</button>
@@ -364,6 +383,28 @@
 
         <div class="settings-footer">
             <button id="pw-score-close" class="btn-stamp-base">CANCEL</button>
+        </div>
+    </div>
+</div>
+
+<!-- ★ Jukebox モーダル -->
+<div id="pw-jukebox-board" class="playlist-overlay" style="display: none;">
+    <div class="pw-board-container">
+        <div class="settings-header">
+            <span class="settings-title">JUKEBOX</span>
+            <div id="pw-jukebox-close-x" class="close-x">×</div>
+        </div>
+
+        <div class="settings-body scroll-container">
+            <div id="jukebox-import-row" style="padding: 15px 15px 0;">
+                <button id="jukebox-import-btn" class="btn-stamp-base">IMPORT MIDI</button>
+                <input type="file" id="jukebox-midi-upload" accept=".mid,.midi" style="display:none;">
+            </div>
+            <div id="jukebox-list-container"></div>
+        </div>
+
+        <div class="settings-footer">
+            <button id="pw-jukebox-close" class="btn-stamp-base">CANCEL</button>
         </div>
     </div>
 </div>
