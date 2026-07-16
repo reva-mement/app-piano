@@ -227,7 +227,7 @@
 /* 1. プレイリストアイコン（本） */
 .playlist-icon-wrapper {
     position: fixed;   
-    bottom: 475px; /* ★ 合計25px上に移動（500px → 520px → 525px） */
+    bottom: 525px; /* ★ 合計25px上に移動（500px → 520px → 525px） */
     right: 50px;      /* イーゼルと重ならないよう、この数値を調整してください */
     width: 120px; 
     z-index: 10000;    
@@ -263,7 +263,7 @@
 .playlist-easel {
     display: block;
     position: absolute; 
-    bottom: 110px;          /* コンテナの右端（画面右端）を基準にする */
+    bottom: 10px;          /* コンテナの右端（画面右端）を基準にする */
     right: -75px;
     width: 250px; 
     height: 300px;     /* クリック判定の高さもしっかり確保 */
@@ -1055,4 +1055,43 @@
 #midi-search-input::placeholder {
     color: #d8c9a8;
     opacity: 0.9;
+}
+
+/* ==========================================
+   Web(体験)版限定：有料版限定機能のツールチップ
+   ========================================== */
+.paid-feature-tooltip {
+    position: fixed;
+    z-index: 999999;
+    background: rgba(20, 20, 20, 0.95);
+    border: 1px solid #b87333;
+    border-radius: 6px;
+    padding: 10px 14px;
+    color: #eee;
+    font-size: 13px;
+    line-height: 1.5;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+    max-width: 260px;
+    animation: paidFeatureTooltipIn 0.15s ease-out;
+}
+
+.paid-feature-tooltip-text {
+    font-weight: bold;
+    margin-bottom: 6px;
+    color: #fff;
+}
+
+.paid-feature-tooltip-link {
+    display: inline-block;
+    color: #ffcc80;
+    text-decoration: underline;
+}
+
+.paid-feature-tooltip-link:hover {
+    color: #ffe0b2;
+}
+
+@keyframes paidFeatureTooltipIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
