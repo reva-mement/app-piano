@@ -115,26 +115,35 @@ export function showPaidFeatureTooltip(anchorEl) {
         <div class="paid-feature-tooltip-text">有償版限定機能となります</div>
         <a href="${PAID_FEATURE_LINK}" target="_blank" rel="noopener noreferrer" class="paid-feature-tooltip-link">LevaCraft（BOOTH）はこちら</a>
     `;
-    document.body.appendChild(tooltip);
+    (document.getElementById('app-scale-wrapper') || document.body).appendChild(tooltip);
 
-    // ★ ボタンのすぐ下に配置する。画面外にはみ出す場合は自動で調整する。
+    // ★ ラッパー(#app-scale-wrapper)にtransform: scale(...)がかかっているため、
+    //   実画面座標(getBoundingClientRect)をそのままstyle.left/topに使うと
+    //   縮小・拡大時にズレる。ラッパー基準・スケール前の座標系に変換してから使う。
+    const wrapper = document.getElementById('app-scale-wrapper');
+    const wrapperRect = wrapper ? wrapper.getBoundingClientRect() : { left: 0, top: 0, width: window.innerWidth };
+    const scale = wrapper ? (wrapperRect.width / (window.APP_DESIGN_WIDTH || wrapperRect.width)) : 1;
+
     const rect = anchorEl.getBoundingClientRect();
-    const tooltipRect = tooltip.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect(); // 実画面サイズ（スケール後）
     const margin = 8;
 
-    let top = rect.bottom + margin;
-    // ★ 下に置くと画面からはみ出す場合は、ボタンの上に表示する
-    if (top + tooltipRect.height > window.innerHeight) {
-        top = rect.top - tooltipRect.height - margin;
-        if (top < margin) top = margin; // それでも収まらない場合は上端に寄せる
+    // ★ 実画面座標での計算（画面端からのはみ出し判定は「本物の画面」基準で行う）
+    let topScreen = rect.bottom + margin;
+    if (topScreen + tooltipRect.height > window.innerHeight) {
+        topScreen = rect.top - tooltipRect.height - margin;
+        if (topScreen < margin) topScreen = margin;
     }
 
-    let left = rect.left;
-    // ★ 右にはみ出す場合は、右端に収まるよう左にずらす
-    if (left + tooltipRect.width > window.innerWidth - margin) {
-        left = window.innerWidth - tooltipRect.width - margin;
+    let leftScreen = rect.left;
+    if (leftScreen + tooltipRect.width > window.innerWidth - margin) {
+        leftScreen = window.innerWidth - tooltipRect.width - margin;
     }
-    if (left < margin) left = margin;
+    if (leftScreen < margin) leftScreen = margin;
+
+    // ★ 実画面座標 → ラッパー基準・スケール前の座標系に変換してから適用する
+    const top = (topScreen - wrapperRect.top) / scale;
+    const left = (leftScreen - wrapperRect.left) / scale;
 
     tooltip.style.top = `${top}px`;
     tooltip.style.left = `${left}px`;

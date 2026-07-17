@@ -146,7 +146,7 @@ function showFirstVisitHelpTip() {
     const tip = document.createElement('div');
     tip.id = 'first-visit-help-tip';
     tip.textContent = '操作方法はこちらから確認できます';
-    document.body.appendChild(tip);
+    (document.getElementById('app-scale-wrapper') || document.body).appendChild(tip);
 
     const FLASH_ON_MS = 600;
     const FLASH_OFF_MS = 400;
