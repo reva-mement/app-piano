@@ -21,6 +21,50 @@
     transform: translate(0px, 0px) scale(1);
 }
 
+/* ==========================================
+   ★ スマートフォン等からのアクセスをブロックするモーダル
+   ========================================== */
+#mobile-block-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 6, 3, 0.96);
+    z-index: 99999999; /* 何よりも確実に最前面 */
+    display: none; /* JS側で該当時のみ flex に切り替え */
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    box-sizing: border-box;
+}
+
+.mobile-block-content {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    max-width: 92vw;
+    background: linear-gradient(135deg, #3d2b1f 0%, #261a12 100%);
+    border: 2px solid #634a35;
+    border-radius: 10px;
+    padding: 22px 26px;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.7);
+}
+
+.mobile-block-image {
+    width: 96px;
+    height: auto;
+    flex-shrink: 0;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+}
+
+.mobile-block-text {
+    font-family: 'Kiwi Maru', serif;
+    color: #e0d0b0;
+    font-size: 15px;
+    line-height: 1.8;
+}
+
 :root {
     /* --- Colors: Wood & Ink (木材とインク) --- */
     --color-wood-dark: #1a1005;            /* 焦げ茶・インク色 */
