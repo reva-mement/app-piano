@@ -4,7 +4,7 @@
  */
 
 import { convertEventsToMidi } from './modes/session.js';
-import { isLocalApp, showLocalOnlyToast } from './utils.js';
+import { isLocalApp, showPaidFeatureTooltip } from './utils.js';
 
 // ★ Session Archive のソート状態（Studio Archiveと同じ▲▼方式）
 let currentSortKey = null; // 'title' | 'date' | null
@@ -348,7 +348,7 @@ async function buildShareUrl(record) {
 window.shareToX = async function(id, title, mode) {
     // ★ Web(体験)版：SNS共有機能はローカル(有料)版限定
     if (!isLocalApp()) {
-        showLocalOnlyToast("演奏の共有(𝕏)機能");
+        showPaidFeatureTooltip(this);
         return;
     }
 
