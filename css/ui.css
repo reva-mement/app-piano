@@ -244,9 +244,9 @@
 
     /* --- ここから位置調整 --- */
     /* 画面下端からの距離 */
-    bottom: 390px; 
+    bottom: 410px; 
     /* 画面左端からの距離 */
-    left: 820px; 
+    left: 850px; 
     /* ★ #tag-studio (translateY(70px)) と同じ移動量に揃えて追従させる */
     transform: translateY(70px);
 
