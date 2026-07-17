@@ -1,4 +1,4 @@
-import { isNoteInView, highlightGuideKey, showModal, THEORY, isLocalApp, showLocalOnlyToast } from '../utils.js';
+import { isNoteInView, highlightGuideKey, showModal, THEORY, isLocalApp, showPaidFeatureTooltip } from '../utils.js';
 // forceStopAll は main.js からの循環依存を避けるため window 経由で呼ぶ
 import { updatePlayButtonUI, updateStudioSongDisplay, formatTime, updateGuideButtonUI } from './studio/player-ui.js';
 import { getInternalTime, setInternalStartTime, setInternalPausedTime, resetPausedTimeOffset } from './studio/timer.js';
@@ -1209,11 +1209,11 @@ function setupStudioUI(loadedMidiDataGetter) {
     const recBtn = document.getElementById('studio-rec-btn'); // ← getEl ではなく ID で取得
 
     // ★ Web(体験)版：Studio録音はローカル(有料)版限定のため、視覚的にロック表示する
-    //   （CSSファイルは別途受領予定のため、ここではインラインスタイルで対応）
     if (recBtn && !isLocalApp()) {
         recBtn.style.opacity = '0.5';
         recBtn.style.cursor = 'not-allowed';
-        recBtn.title = 'Studioの録音・保存機能はローカル版（有料）限定の機能です';
+        // ★ title属性は付けない（ホバー時にブラウザ標準のツールチップが出て、
+        //   クリック時の専用ツールチップと二重に見えるため）
     }
 
     if (window.studioGuideMode === undefined) {
@@ -1322,7 +1322,7 @@ if (recBtn) {
         if (!isStudioRecording) {
             // ★ Web(体験)版：Studioの録音・保存機能はローカル(有料)版限定
             if (!isLocalApp()) {
-                showLocalOnlyToast("Studioの録音・保存機能");
+                showPaidFeatureTooltip(recBtn);
                 return;
             }
 
