@@ -2,6 +2,25 @@
    PianoWorks Theme Definition (theme.css)
    ========================================== */
 
+/* ==========================================
+   ★ 画面スケール用ラッパー
+   1366×768を「設計上の画面」として固定し、実際の画面サイズに
+   応じてJS側（main.js）が transform: translate(...) scale(...) を
+   動的に設定する。この要素は常に transform を持つため、内部の
+   position:fixed 要素は本物の画面ではなく、この枠を基準に配置される。
+   ========================================== */
+#app-scale-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 1366px;
+    height: 768px;
+    transform-origin: top left;
+    /* 初期表示時（JS適用前）に一瞬でも崩れて見えないよう、
+       ロード時点で妥当なデフォルト値を入れておく。実際の値はJSが上書きする。 */
+    transform: translate(0px, 0px) scale(1);
+}
+
 :root {
     /* --- Colors: Wood & Ink (木材とインク) --- */
     --color-wood-dark: #1a1005;            /* 焦げ茶・インク色 */

@@ -14,9 +14,9 @@
 }
 .control-panel-container {
     position: absolute;
-    left: 50%; top: calc(9% - 20px); /* ★ 20px上にずらす */
+    left: 50%; top: calc(20% - 20px); /* ★ 20px上にずらす */
     transform: translate(-50%, -30%);
-    width: 100vw;
+    width: 100%;
     z-index: 100;
     pointer-events: none;
     display: flex;
@@ -244,7 +244,7 @@
 
     /* --- ここから位置調整 --- */
     /* 画面下端からの距離 */
-    bottom: 310px; 
+    bottom: 390px; 
     /* 画面左端からの距離 */
     left: 820px; 
     /* ★ #tag-studio (translateY(70px)) と同じ移動量に揃えて追従させる */

@@ -160,7 +160,7 @@
 .settings-board-container {
     min-width: 520px;
     /* 修正：100vhから少し短くして、上下の縁がブラウザ内に収まるようにする */
-    height: calc(100vh - 13px); 
+    height: calc(100% - 13px); 
     
     background: linear-gradient(135deg, #3d2b1f 0%, #261a12 100%);
     
@@ -227,7 +227,7 @@
 /* 1. プレイリストアイコン（本） */
 .playlist-icon-wrapper {
     position: fixed;   
-    bottom: 475px; /* ★ 合計25px上に移動（500px → 520px → 525px） */
+    bottom: 525px; /* ★ 合計25px上に移動（500px → 520px → 525px） */
     right: 50px;      /* イーゼルと重ならないよう、この数値を調整してください */
     width: 120px; 
     z-index: 10000;    
@@ -263,8 +263,8 @@
 .playlist-easel {
     display: block;
     position: absolute; 
-    bottom: 95px;          /* コンテナの右端（画面右端）を基準にする */
-    right: -5px;
+    bottom: 10px;          /* コンテナの右端（画面右端）を基準にする */
+    right: -75px;
     width: 250px; 
     height: 300px;     /* クリック判定の高さもしっかり確保 */
     cursor: pointer;
@@ -296,7 +296,7 @@
     display: none; /* JSで flex に切り替え */
     position: fixed;
     top: 0; left: 0;
-    width: 100vw; height: 100vh;
+    width: 100%; height: 100%;
     background: rgba(0, 0, 0, 0.8);
     z-index: 10000; /* 最前面 */
     justify-content: center;
@@ -355,7 +355,7 @@
     display: none; /* JSで flex に切り替え */
     position: fixed; 
     top: 0; left: 0;
-    width: 100vw; height: 100vh;
+    width: 100%; height: 100%;
     background: rgba(0, 0, 0, 0.85); /* 背景をしっかり暗く */
     z-index: 9999; 
     justify-content: center;
@@ -598,7 +598,7 @@
    中心(188,218)から右に50px・上に20px寄せた位置が実際にちょうど良かったため、その値を使用。 */
 .weather-visual-box {
     position: absolute; /* 他の要素を無視して配置 */
-    top: 85px;
+    top: 106px;
     left: 24px;
 
     display: flex;
@@ -725,8 +725,8 @@
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
     background: rgba(0,0,0,0.55);
     display: none;
     justify-content: center;
@@ -904,7 +904,7 @@
     display: none; /* JSで flex に切り替え */
     position: fixed; 
     top: 0; left: 0;
-    width: 100vw; height: 100vh;
+    width: 100%; height: 100%;
     background: rgba(0, 0, 0, 0.85);
     z-index: 9999;
     justify-content: center;

@@ -75,8 +75,8 @@
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
+    width: 100% !important;
+    height: 100% !important;
     background: radial-gradient(circle at center, #0c0d19 0%, #030305 100%);
     
     /* 🌟 通常UI（木枠など）の上に覆い被さり、かつピアノ全体(500)の裏に潜る数値 */
@@ -99,8 +99,8 @@
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
+    width: 100% !important;
+    height: 100% !important;
     
     /* 🌟 暗闇(400)のすぐ前面、かつピアノ(500)のすぐ後ろの隙間に固定！ */
     z-index: 450 !important; 
