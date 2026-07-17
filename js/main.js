@@ -103,6 +103,13 @@ export function forceStopAll() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // ★ スマートフォン等と判定された場合は、アプリ本体の初期化を一切行わない
+    //   （index.html側の早期スクリプトで既にブロックモーダルは表示済み）
+    if (window.__PIANOWORKS_MOBILE_BLOCK__) {
+        console.log('📱 Mobile device detected. Skipping app initialization.');
+        return;
+    }
+
     handleLoader();
 
     try {
