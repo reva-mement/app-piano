@@ -106,12 +106,12 @@ function showJukeboxCountdown() {
         if (!el) {
             el = document.createElement('div');
             el.id = 'jukebox-countdown';
-            document.body.appendChild(el);
+            (document.getElementById('app-scale-wrapper') || document.body).appendChild(el);
         }
         el.style.cssText = `
             position: fixed;
             top: 0; left: 0;
-            width: 100vw; height: 100vh;
+            width: 100%; height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;

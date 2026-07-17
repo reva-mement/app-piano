@@ -445,15 +445,15 @@ window.handlePlayProgress = async function(btn, loadedMidiData) {
         if (!container) {
             container = document.createElement('div');
             container.id = 'sg-canvas-container';
-            document.body.appendChild(container);
+            (document.getElementById('app-scale-wrapper') || document.body).appendChild(container);
         }
 
 container.style.cssText = `
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
+    width: 100% !important;
+    height: 100% !important;
     z-index: 0 !important;
     pointer-events: none !important;
     display: block !important;
@@ -649,15 +649,15 @@ if (!isMidiLoaded || currentFileName !== lastLoadedFileName) {
         if (!container) {
             container = document.createElement('div');
             container.id = 'sg-canvas-container';
-            document.body.appendChild(container);
+            (document.getElementById('app-scale-wrapper') || document.body).appendChild(container);
         }
 
         container.style.cssText = `
             position: fixed !important;
             top: 0 !important;
             left: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
+            width: 100% !important;
+            height: 100% !important;
             z-index: 0 !important;
             pointer-events: none !important;
             display: block !important;
@@ -1613,7 +1613,7 @@ window.addEventListener('keydown', (event) => {
     confirmBox.style.cssText = `
         position: fixed;
         top: 0; left: 0;
-        width: 100vw; height: 100vh;
+        width: 100%; height: 100%;
         background: rgba(0,0,0,0.55);
         display: flex;
         justify-content: center;
@@ -1634,7 +1634,7 @@ window.addEventListener('keydown', (event) => {
             </div>
         </div>
     `;
-    document.body.appendChild(confirmBox);
+    (document.getElementById('app-scale-wrapper') || document.body).appendChild(confirmBox);
 
     // ② 「はい」＝ 停止（■）と完全に同じ挙動にする
     document.getElementById("studio-confirm-yes").onclick = async () => {
