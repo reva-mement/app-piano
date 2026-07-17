@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>PianoWorks Overlay</title>
+  <style>
+    /* 1. 窓全体を「完全な透明」にする */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0) !important; 
+      overflow: hidden;
+      /* マウス操作を透過させたい場合はここを調整しますが、まずは表示優先で */
+    }
+
+    /* 2. 鍵盤を表示するエリア */
+    #piano-container {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      /* 動画の上で鍵盤が浮いて見えるよう、薄く黒い背景を敷く */
+      background-color: rgba(0, 0, 0, 0.5); 
+      padding: 20px 0;
+      min-height: 200px;
+    }
+
+    /* 仮のテキスト（後で本物の鍵盤に置き換えます） */
+    .placeholder-text {
+      color: white;
+      text-align: center;
+      font-family: sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <div id="piano-container">
+    <div class="placeholder-text">ここに88鍵盤が描画されます</div>
+    <div id="keyboard"></div>
+  </div>
+</body>
+</html>
