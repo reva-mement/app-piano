@@ -32,6 +32,37 @@
 
 </head>
 <body>
+<!-- ============================================================
+     ★ 画面解像度・DPI設定の違いによるレイアウト崩れ対策：
+     全UIを1366×768の「設計上の画面」として1つの枠(#app-scale-wrapper)に
+     まとめ、実際の画面サイズに合わせてJSで均等に拡大縮小する。
+     #app-scale-wrapperにtransformを常時かけることで、中の
+     position:fixed要素は「本物の画面」ではなく、この枠を基準に
+     配置されるようになる（CSSの仕様）。
+     ============================================================ -->
+<script>
+    window.APP_DESIGN_WIDTH = 1366;
+    window.APP_DESIGN_HEIGHT = 768;
+</script>
+<div id="app-scale-wrapper">
+<script>
+    // ★ できるだけ早く（他の描画より前に）スケールを適用し、
+    //   一瞬でも間違ったサイズで表示されるのを防ぐ
+    (function () {
+        function applyAppScale() {
+            var wrapper = document.getElementById('app-scale-wrapper');
+            if (!wrapper) return;
+            var w = window.APP_DESIGN_WIDTH, h = window.APP_DESIGN_HEIGHT;
+            var scale = Math.min(window.innerWidth / w, window.innerHeight / h);
+            var offsetX = (window.innerWidth - w * scale) / 2;
+            var offsetY = (window.innerHeight - h * scale) / 2;
+            wrapper.style.transform = 'translate(' + offsetX + 'px, ' + offsetY + 'px) scale(' + scale + ')';
+        }
+        window.applyAppScale = applyAppScale;
+        applyAppScale();
+        window.addEventListener('resize', applyAppScale);
+    })();
+</script>
     <div id="help-trigger" class="settings-floating-btn help-floating-btn">
         <span class="help-mark">?</span>
     </div>
@@ -55,10 +86,10 @@
     </div>
 
     <div id="video-background"></div>
-    <iframe id="video-background-iframe" allow="autoplay; encrypted-media" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:0; border:none; pointer-events:none;"></iframe>
+    <iframe id="video-background-iframe" allow="autoplay; encrypted-media" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:0; border:none; pointer-events:none;"></iframe>
 
     <!-- ★★★ 診断用：タグの仕組みと完全に切り離し、確実に見える固定座標に強制表示 --- -->
-    <div id="midi-search-bar" style="display: flex !important; position: fixed !important; top: 30px !important; left: 440px !important; z-index: 150 !important; gap: 8px; width: 590px;">
+    <div id="midi-search-bar" style="display: flex !important; position: fixed !important; top: 50px !important; left: 440px !important; z-index: 150 !important; gap: 8px; width: 590px;">
         <input type="text" id="midi-search-input" placeholder="ここからMIDIを検索することができます" style="flex: 1; min-width: 0; padding: 10px 14px; background: rgba(0,0,0,0.4); border: 1px solid #634a35; border-radius: 4px; color: #e0d0b0; font-size: 0.85rem;">
         <button id="midi-search-btn" class="btn-stamp-base" style="min-width: 100px;">Search</button>
     </div>
@@ -323,7 +354,7 @@
 </div>
 
 <!-- Toast Modal -->
-<div id="toast-modal" class="playlist-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10010; background: rgba(0,0,0,0.5);">
+<div id="toast-modal" class="playlist-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10010; background: rgba(0,0,0,0.5);">
     <div class="modal-content mini-modal">
         <div class="settings-header">
             <span class="settings-title">MESSAGE</span>
@@ -338,7 +369,7 @@
 </div>
 
 <!-- ★ MIDI重複確認モーダル（選択モーダルと同デザイン） -->
-<div id="duplicate-confirm-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.55); justify-content: center; align-items: center; z-index: 99999;">
+<div id="duplicate-confirm-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.55); justify-content: center; align-items: center; z-index: 99999;">
     <div class="pw-select-container">
         <div class="pw-select-body">
             <p id="duplicate-confirm-message" style="color:#eee; font-size:15px; line-height:1.6; margin:0; text-align:center;">同じ曲がStudio Archiveに登録されているようです。処理を選んでください。</p>
@@ -417,6 +448,8 @@
   <div class="tooltip-line"><strong>Range:</strong> <span id="tt-range"></span></div>
   <button id="tt-delete-btn">削除</button>
 </div>
+
+</div> <!-- /#app-scale-wrapper -->
 
 <script>
   if ('serviceWorker' in navigator) {
