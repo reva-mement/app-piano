@@ -33,6 +33,39 @@
 </head>
 <body>
 <!-- ============================================================
+     ★ スマートフォン等からのアクセスをブロックするモーダル。
+     本体の初期化処理より前に判定し、該当すればここで表示して
+     アプリ本体（#app-scale-wrapper以下）の初期化はスキップする。
+     ============================================================ -->
+<div id="mobile-block-modal" style="display:none;">
+    <div class="mobile-block-content">
+        <img src="assets/crying.png" alt="" class="mobile-block-image">
+        <div class="mobile-block-text">
+            本アプリケーションはPC専用となります！<br>
+            申し訳ありませんが、PCから改めてお越しいただけますでしょうか。
+        </div>
+    </div>
+</div>
+<script>
+    (function () {
+        function isMobileDevice() {
+            var ua = navigator.userAgent || '';
+            var isMobileUA = /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(ua);
+            // ★ タッチのみ(ポインターデバイスが無い)端末もスマホ扱いにする
+            var isTouchOnly = ('ontouchstart' in window) &&
+                window.matchMedia && !window.matchMedia('(pointer: fine)').matches;
+            return isMobileUA || isTouchOnly;
+        }
+
+        if (isMobileDevice()) {
+            window.__PIANOWORKS_MOBILE_BLOCK__ = true;
+            var modal = document.getElementById('mobile-block-modal');
+            if (modal) modal.style.display = 'flex';
+        }
+    })();
+</script>
+
+<!-- ============================================================
      ★ 画面解像度・DPI設定の違いによるレイアウト崩れ対策：
      全UIを1366×768の「設計上の画面」として1つの枠(#app-scale-wrapper)に
      まとめ、実際の画面サイズに合わせてJSで均等に拡大縮小する。
@@ -89,7 +122,7 @@
     <iframe id="video-background-iframe" allow="autoplay; encrypted-media" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:0; border:none; pointer-events:none;"></iframe>
 
     <!-- ★★★ 診断用：タグの仕組みと完全に切り離し、確実に見える固定座標に強制表示 --- -->
-    <div id="midi-search-bar" style="display: flex !important; position: fixed !important; top: 50px !important; left: 465px !important; z-index: 150 !important; gap: 8px; width: 590px;">
+    <div id="midi-search-bar" style="display: flex !important; position: fixed !important; top: 50px !important; left: 440px !important; z-index: 150 !important; gap: 8px; width: 590px;">
         <input type="text" id="midi-search-input" placeholder="ここからMIDIを検索することができます" style="flex: 1; min-width: 0; padding: 10px 14px; background: rgba(0,0,0,0.4); border: 1px solid #634a35; border-radius: 4px; color: #e0d0b0; font-size: 0.85rem;">
         <button id="midi-search-btn" class="btn-stamp-base" style="min-width: 100px;">Search</button>
     </div>
