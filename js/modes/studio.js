@@ -454,7 +454,7 @@ container.style.cssText = `
     left: 0 !important;
     width: 100% !important;
     height: 100% !important;
-    z-index: 0 !important;
+    z-index: 1 !important;
     pointer-events: none !important;
     display: block !important;
     visibility: visible !important;
@@ -482,10 +482,16 @@ container.style.cssText = `
         //    判定できるようにする）
         const engine = window.gameEngine;
 
-        // ★ 先読みシステムをリセットして開始（曲の途中から始める場合にも対応）
+        // ★★★ 修正：先読みシステム(startLookaheadScanner)はmidiPlayerに読み込まれた
+        //   「生MIDIファイル」のtick位置を基準にしており、このDB(Archive)経由の
+        //   再生では生MIDIを読み込み直さないため、flatNoteEventsが前回読み込んだ
+        //   別の曲のまま古いデータで残ってしまう。結果、Archive起動時だけ誤った
+        //   タイミングでブロックが先読み生成され「開始部分がズレる」不具合の原因に
+        //   なっていた。このDBパスでは dbNoteSchedule 側が addFallingBlock を
+        //   直接呼んで正しくブロックを生成しているため、先読みシステム自体が不要。
         lookaheadPointer = 0;
         spawnedViaLookahead.clear();
-        startLookaheadScanner();
+        stopLookaheadScanner();
 
         // ★ カスタム背景URLが有効なら、Sessionモードと同じように
         //   鍵盤を半透明化・他のUIオブジェクトを透明化して没入感を出す。
@@ -584,7 +590,11 @@ container.style.cssText = `
     // --- 1. 再生中なら停止処理 ---
     if (midiPlayer.isPlaying && midiPlayer.isPlaying()) {
         midiPlayer.pause();
-        setInternalStartTime();
+        // ★★★ 修正：ここで setInternalStartTime()（再生開始位置を計算し直すだけの
+        //   関数）を呼んでいたため、一時停止した瞬間の経過時間が記録されず、
+        //   表示が 00:00 に戻ってしまっていた。一時停止時は、その瞬間までの
+        //   経過時間を記録する setInternalPausedTime() を呼ぶのが正しい。
+        setInternalPausedTime();
         updatePlayButtonUI('paused');
         window.isPlaying = false;
 
@@ -658,7 +668,7 @@ if (!isMidiLoaded || currentFileName !== lastLoadedFileName) {
             left: 0 !important;
             width: 100% !important;
             height: 100% !important;
-            z-index: 0 !important;
+            z-index: 1 !important;
             pointer-events: none !important;
             display: block !important;
             visibility: visible !important;
@@ -717,6 +727,17 @@ if (!isMidiLoaded || currentFileName !== lastLoadedFileName) {
     }
 
     // --- 4. ガイド OFF（通常再生） ---
+    // ★ GAME ONだけでなく、通常再生（StudioタグのPLAY・Jukebox再生）でも
+    //   カスタム背景URLが設定されていれば反映する。
+    //   GAME ONと同じく game-bg-active を付与し、タグ等のUIを透過させて
+    //   背景をしっかり見せる。
+    if (window.hasCustomBgUrl && window.customBgUrlValue) {
+        document.body.classList.add('game-bg-active');
+        if (typeof window.showCustomBackground === 'function') {
+            window.showCustomBackground(window.customBgUrlValue);
+        }
+    }
+
     setInternalStartTime();
     midiPlayer.play();
     updatePlayButtonUI('playing');
@@ -1233,10 +1254,16 @@ function setupStudioUI(loadedMidiDataGetter) {
         // ここで即リターンしてしまい時間表示が 00:00 に戻らなかった。
         if (manualSec === 0) {
             if (timeDisplay) {
-                const total = (midiPlayer && midiPlayer.getSongTime) ? (() => {
+                // ★★★ 修正：ここだけ getSongTime()（テンポチェンジに対応しない、
+                //   Playerライブラリ内蔵のナイーブな計算）を使っていたため、
+                //   他の場所（window.currentSongDurationMs基準）と表示が
+                //   食い違っていた。同じ基準に統一する。
+                let total = window.currentSongDurationMs ? window.currentSongDurationMs / 1000 : 0;
+                if (total <= 0 && midiPlayer && midiPlayer.getSongTime) {
+                    // フォールバック：currentSongDurationMs が無い場合のみ
                     let t = midiPlayer.getSongTime();
-                    return t > 10000 ? t / 1000 : t;
-                })() : 0;
+                    total = t > 10000 ? t / 1000 : t;
+                }
                 timeDisplay.textContent = `${formatTime(0)} / ${formatTime(total)}`;
             }
             if (!isDragging) seekSlider.value = 0;
@@ -1534,11 +1561,16 @@ window.refreshStudioTimeDisplay = function() {
     const timeDisplay = document.getElementById('studio-time-display');
     if (!midiPlayer || !timeDisplay) return;
 
-    // midiplayer.js から曲の長さを取得（秒単位）
-    let total = midiPlayer.getSongTime ? midiPlayer.getSongTime() : 0;
-    
-    // ライブラリによってミリ秒で返ってくる場合があるための調整
-    if (total > 10000) total /= 1000;
+    // ★★★ 修正：ここも getSongTime()（テンポチェンジに対応しない、
+    //   Playerライブラリ内蔵のナイーブな計算）を使っていたため、
+    //   他の場所（window.currentSongDurationMs基準）と表示が食い違っていた。
+    let total = window.currentSongDurationMs ? window.currentSongDurationMs / 1000 : 0;
+    if (total <= 0) {
+        // フォールバック：currentSongDurationMs が無い場合のみ
+        total = midiPlayer.getSongTime ? midiPlayer.getSongTime() : 0;
+        // ライブラリによってミリ秒で返ってくる場合があるための調整
+        if (total > 10000) total /= 1000;
+    }
 
     if (total > 0) {
         // 0秒 / 総秒数 という形式で表示

@@ -9,9 +9,15 @@
      ただの再生）を再利用する
    ============================================================ */
 
+// ★ ソート状態（Session/Studio Archiveと同じ方式）
+let currentSortKey = null; // 'title' | 'duration' | null
+let currentSortDir = 'asc'; // 'asc' | 'desc'
+
 // mm:ss 形式に整形する
 function formatDuration(ms) {
-    const totalSec = Math.max(0, Math.round((ms || 0) / 1000));
+    // ★ 修正：Math.round だと、Studioタグ側の表示（formatTime、Math.floor基準）と
+    //   境界値で1秒ズレることがあったため、同じ Math.floor に統一する。
+    const totalSec = Math.max(0, Math.floor((ms || 0) / 1000));
     const min = Math.floor(totalSec / 60);
     const sec = totalSec % 60;
     return `${min}:${String(sec).padStart(2, '0')}`;
@@ -39,11 +45,42 @@ export async function renderJukeboxList() {
     if (!container) return;
 
     const entries = await window.playnoteDB.getAllJukeboxEntries();
-    const sorted = [...entries].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+
+    // ★★★ ソート ★★★
+    // currentSortKey が null のときは従来通り「取り込んだ順（古い順）」。
+    // ヘッダーの▲▼が押されていれば、そのキー・方向でソートする。
+    let sorted;
+    if (currentSortKey) {
+        sorted = [...entries].sort((a, b) => {
+            let va, vb;
+            if (currentSortKey === 'title') {
+                va = (a.title || '');
+                vb = (b.title || '');
+            } else { // 'duration'
+                va = a.durationMs ?? 0;
+                vb = b.durationMs ?? 0;
+            }
+            const cmp = (typeof va === 'string') ? va.localeCompare(vb) : (va - vb);
+            return currentSortDir === 'asc' ? cmp : -cmp;
+        });
+    } else {
+        sorted = [...entries].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+    }
 
     if (sorted.length === 0) {
         container.innerHTML = `<div class="settings-placeholder">まだ曲がありません。「IMPORT MIDI」から曲を取り込んでください。</div>`;
         return;
+    }
+
+    // ★ ヘッダーの▲▼マークアップを生成するヘルパー（Session/Studio Archiveと同じデザイン）
+    function sortArrows(key) {
+        const ascActive = (currentSortKey === key && currentSortDir === 'asc');
+        const descActive = (currentSortKey === key && currentSortDir === 'desc');
+        return `
+            <span class="sort-arrows">
+                <span class="sort-arrow${ascActive ? ' active' : ''}" data-sort-key="${key}" data-sort-dir="asc" title="昇順">▲</span
+                ><span class="sort-arrow${descActive ? ' active' : ''}" data-sort-key="${key}" data-sort-dir="desc" title="降順">▼</span>
+            </span>`;
     }
 
     let html = `
@@ -51,8 +88,8 @@ export async function renderJukeboxList() {
             <thead>
                 <tr>
                     <th>No.</th>
-                    <th style="text-align: left; padding-left: 15px;">Title</th>
-                    <th>Duration</th>
+                    <th style="text-align: left; padding-left: 15px;">Title${sortArrows('title')}</th>
+                    <th>Duration${sortArrows('duration')}</th>
                     <th>Play</th>
                     <th>DEL</th>
                 </tr>
@@ -75,6 +112,15 @@ export async function renderJukeboxList() {
 
     html += `</tbody></table>`;
     container.innerHTML = html;
+
+    // ★ ソート矢印（▲▼）のイベント
+    container.querySelectorAll(".sort-arrow").forEach(arrow => {
+        arrow.addEventListener("click", () => {
+            currentSortKey = arrow.dataset.sortKey;
+            currentSortDir = arrow.dataset.sortDir;
+            renderJukeboxList();
+        });
+    });
 
     container.querySelectorAll('.jukebox-play-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
@@ -152,6 +198,20 @@ async function playJukeboxEntry(entry) {
     window.currentMidiFileName = entry.title;
     window.loadedMidiTitle = entry.title;
 
+    // ★★★ 重要 ★★★
+    // studio.js側の時間表示は「テンポチェンジが多い曲だと再生中に値が
+    // 変動する」バグを避けるため、window.currentSongDurationMs（あらかじめ
+    // 正確に計算された曲の長さ）を優先して使う作りになっている。
+    // ここをセットし忘れると、常に不安定な方の計算式にフォールバックして
+    // しまい、再生中に表示時間がころころ変わって見えていた。
+    // インポート時に既に正確な値(entry.durationMs)を計算済みなので、それを使う。
+    window.currentSongDurationMs = entry.durationMs || 0;
+
+    // ★ Studioタグの曲名表示窓（スクロール表示）にもタイトルを反映する
+    if (typeof window.updateStudioSongDisplay === 'function') {
+        window.updateStudioSongDisplay(entry.title);
+    }
+
     if (typeof window.handlePlayProgress === 'function') {
         // ArrayBufferはコピーを渡す（元データは保持しておく）
         await window.handlePlayProgress(null, entry.midiData.slice(0));
@@ -169,9 +229,12 @@ async function importMidiFile(file) {
         ? window.extractNotesFromMidi(player)
         : [];
 
-    const durationMs = notes.length > 0
-        ? Math.max(...notes.map(n => (n.time || 0) + (n.duration || 0)))
-        : 0;
+    // ★ 計算ロジックの完全一本化：ここで自前にMath.maxを計算し直すのではなく、
+    //   extractNotesFromMidi()が副作用として設定する window.currentSongDurationMs
+    //   （main.js側の通常アップロード経路と全く同じ計算式・同じ関数）を
+    //   そのまま使う。extractNotesFromMidiは同期関数なので、直後に読めば
+    //   他の処理と競合する心配はない。
+    const durationMs = window.currentSongDurationMs || 0;
 
     const title = file.name.replace(/\.[^/.]+$/, "");
 
