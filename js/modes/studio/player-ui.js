@@ -4,7 +4,11 @@
  * 再生ボタンの表示を更新する
  */
 export function updatePlayButtonUI(state) {
-    const playBtn = document.querySelector('#tag-studio .play-stamp');
+    // ★ 修正：#tag-studio .play-stamp というセレクタだと、カスタム背景表示中に
+    //   ボタンが #tag-studio の外（画面左上）へ移動している間は見つからず、
+    //   表示が更新されなかった（▶ PLAYのままになる）。IDで直接探すことで
+    //   ボタンがどこにあっても正しく更新されるようにする。
+    const playBtn = document.getElementById('studio-play-btn');
     if (!playBtn) return;
     if (state === 'playing') {
         playBtn.textContent = "Ⅱ PAUSE";
