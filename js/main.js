@@ -427,9 +427,14 @@ window.extractNotesFromMidi = function(player) {
 
     // ★ 正確な曲の長さ（ms）を計算してグローバルに保持する
     //   （getSongTime()はテンポチェンジが多い曲で変動するため使わない）
+    //   ★ 修正：「開始時刻が一番遅い音」の終了時刻ではなく、
+    //   「全ノートの終了時刻の中で最大のもの」を使う（Jukebox側の計算式と統一）。
+    //   開始は早くても、より長く伸びて後まで鳴っている音がある場合、
+    //   前者の方式だと曲の長さを短く見積もってしまうため。
     if (songData.length > 0) {
-        const lastNote = songData[songData.length - 1];
-        window.currentSongDurationMs = lastNote.time + (lastNote.duration || 0);
+        window.currentSongDurationMs = Math.max(
+            ...songData.map(n => (n.time || 0) + (n.duration || 0))
+        );
     } else {
         window.currentSongDurationMs = 0;
     }
@@ -553,6 +558,45 @@ function initBackground() {
     window.gameOverlayOpacity = savedOpacity !== null ? parseFloat(savedOpacity) : 0.95;
 }
 
+// ★ カスタム背景表示中、PLAY/STOPボタンを元の位置から抜き出して
+//   画面左上に固定表示するための保管場所（表示解除時に元へ戻すために使う）
+let _floatingControlsOriginalParent = null;
+let _floatingControlsOriginalNextSibling = null;
+
+function moveTransportControlsToFloatingCorner() {
+    const playBtn = document.getElementById('studio-play-btn');
+    const stopBtn = document.getElementById('studio-stop-btn');
+    if (!playBtn || !stopBtn) return;
+    // ★ 既に移動済みなら何もしない
+    if (document.getElementById('floating-transport-controls')) return;
+
+    // 元の位置（親要素・直後の兄弟要素）を覚えておく
+    _floatingControlsOriginalParent = playBtn.parentElement;
+    _floatingControlsOriginalNextSibling = playBtn.nextSibling;
+
+    const floatingBox = document.createElement('div');
+    floatingBox.id = 'floating-transport-controls';
+    floatingBox.appendChild(playBtn);
+    floatingBox.appendChild(stopBtn);
+
+    (document.getElementById('app-scale-wrapper') || document.body).appendChild(floatingBox);
+}
+
+function restoreTransportControlsFromFloatingCorner() {
+    const floatingBox = document.getElementById('floating-transport-controls');
+    if (!floatingBox) return;
+
+    const playBtn = document.getElementById('studio-play-btn');
+    const stopBtn = document.getElementById('studio-stop-btn');
+
+    if (_floatingControlsOriginalParent) {
+        // ★ 元あった場所（同じ兄弟要素の直前）に戻す
+        if (playBtn) _floatingControlsOriginalParent.insertBefore(playBtn, _floatingControlsOriginalNextSibling);
+        if (stopBtn) _floatingControlsOriginalParent.insertBefore(stopBtn, _floatingControlsOriginalNextSibling);
+    }
+    floatingBox.remove();
+}
+
 /**
  * ★ 背景をURL表示（iframe）に切り替える。
  *   画像レイヤー(#video-background)を隠し、代わりにiframeでURLを表示する。
@@ -571,6 +615,10 @@ function showCustomBackground(url) {
     if (videoBgLayer) videoBgLayer.style.display = 'none';
     iframe.src = url;
     iframe.style.display = 'block';
+
+    // ★ #ui-layer ごと透過するため、PLAY/STOPボタンだけは
+    //   外に出して画面左上に残す（機能はそのまま使える）
+    moveTransportControlsToFloatingCorner();
 }
 window.showCustomBackground = showCustomBackground; // ★ studio.js から呼べるように公開
 
@@ -587,6 +635,9 @@ function showDefaultBackground() {
         iframe.src = 'about:blank';
     }
     if (videoBgLayer) videoBgLayer.style.display = 'block';
+
+    // ★ 左上に出しておいたPLAY/STOPボタンを元の位置へ戻す
+    restoreTransportControlsFromFloatingCorner();
 }
 window.showDefaultBackground = showDefaultBackground; // ★ studio.js から呼べるように公開
 

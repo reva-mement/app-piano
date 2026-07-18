@@ -18,11 +18,27 @@ let currentWeatherCategory = "Default";
  */
 export function setBubbleText(text) {
     bubbleGeneration++; // ★ 進行中のtypeWriterEffectのタイピングを無効化してから上書きする
+    const myGeneration = bubbleGeneration;
     const bubbleText = document.querySelector('#ai-thought-bubble .speech-bubble-text');
     if (!bubbleText) return;
     bubbleText.style.transition = "none";
     bubbleText.style.opacity = 1;
     bubbleText.textContent = text;
+
+    // ★★★ 修正：typeWriterEffect()と同じく「30秒表示→フェードアウト→
+    //   次のセリフサイクルへ」という継続処理をここにも追加する。
+    //   これが無いと、setBubbleText()で表示した内容（GAME ON終了後の
+    //   スコア発表など）がそのまま固定表示され続け、キャラクターが
+    //   二度と通常のセリフサイクルへ戻らなくなってしまっていた。
+    setTimeout(() => {
+        if (myGeneration !== bubbleGeneration) return; // 別の表示に切り替わっていたら何もしない
+        bubbleText.style.transition = "opacity 2.0s";
+        bubbleText.style.opacity = 0;
+        setTimeout(() => {
+            if (myGeneration !== bubbleGeneration) return;
+            runThoughtCycle();
+        }, 2000);
+    }, 30000);
 }
 
 export function setCharacterImage(fileName, { animate = true, durationMs = 1800 } = {}) {
