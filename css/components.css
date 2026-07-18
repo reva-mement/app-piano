@@ -1034,6 +1034,40 @@
     transition: opacity 1.0s ease-in-out;
 }
 
+/* ============================================================
+   カスタム背景表示中、画面左上に退避させるPLAY/STOPボタン
+   ============================================================ */
+#floating-transport-controls {
+    position: fixed;
+    top: 24px;
+    left: 24px;
+    z-index: 300000; /* 暗幕・背景より確実に手前 */
+    display: flex;
+    gap: 10px;
+    pointer-events: auto;
+    /* ★ 他のUI（#ui-layer等）が透過し終わる1秒後から、
+       うっすら・ゆっくり浮かび上がるように出す */
+    opacity: 0;
+    animation: floatingControlsIn 1.2s ease-out 0.9s forwards;
+}
+
+#floating-transport-controls .play-stamp,
+#floating-transport-controls .stop-stamp {
+    /* ボタン自身の位置指定(absolute/top/left)を打ち消し、
+       このコンテナ内で横並びにする */
+    position: static !important;
+}
+
+@keyframes floatingControlsIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 0.85; transform: translateY(0); }
+}
+
+#floating-transport-controls:hover {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
 /* --- MIDI検索ボタン：他のボタンと同じ木目デザインに統一 --- */
 #midi-search-btn {
     background: #3d2b1f;
