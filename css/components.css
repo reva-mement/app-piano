@@ -598,7 +598,7 @@
    中心(188,218)から右に50px・上に20px寄せた位置が実際にちょうど良かったため、その値を使用。 */
 .weather-visual-box {
     position: absolute; /* 他の要素を無視して配置 */
-    top: 106px;
+    top: 85px;
     left: 24px;
 
     display: flex;
