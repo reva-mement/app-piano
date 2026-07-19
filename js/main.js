@@ -6,7 +6,7 @@ import { updateMasterVolume, isLocalApp, showPaidFeatureTooltip } from './utils.
 import { initStudioMode } from './modes/studio.js';
 import { playnoteDB, getAndExportMIDI, saveAndRefresh, deleteAndRefresh, refreshArchiveUI } from './playnote-db.js';
 import { setupScoreBoard, renderStudioScoreList, saveImportedMidiToScoring } from "./modes/studio/studio-scoring-ui.js";
-import { setupJukeboxBoard } from "./modes/jukebox.js";
+import { setupJukeboxBoard, renderJukeboxList } from "./modes/jukebox.js";
 
 // ★ 追加：思考エンジンのインポート
 import { initThoughtEngine } from './thought-engine.js';
@@ -308,6 +308,26 @@ function setupMidiLoader() {
                     console.warn("⚠ ノートイベントが見つかりませんでした");
                 }
 
+                // ★★★ Jukeboxにも登録する ★★★
+                //   メイン画面のImportアイコンから取り込んだ曲も、
+                //   Jukeboxの一覧から後で聴き直せるようにする。
+                try {
+                    await window.playnoteDB.saveJukeboxEntry({
+                        title: window.loadedMidiTitle || window.currentMidiFileName,
+                        durationMs: window.currentSongDurationMs || 0,
+                        midiData: loadedMidiData.slice(0), // コピーを保存（元データは他の用途で使われ続けるため）
+                        createdAt: Date.now()
+                    });
+                    console.log("🎵 Jukeboxにも登録しました");
+
+                    // ★ Jukeboxモーダルが開いている場合、即座に一覧に反映する
+                    if (typeof renderJukeboxList === 'function') {
+                        await renderJukeboxList();
+                    }
+                } catch (err) {
+                    console.error("❌ Jukeboxへの登録に失敗しました:", err);
+                }
+
                 if (typeof window.refreshStudioTimeDisplay === 'function') {
                     window.refreshStudioTimeDisplay();
                 }
@@ -559,9 +579,13 @@ function initBackground() {
 }
 
 // ★ カスタム背景表示中、PLAY/STOPボタンを元の位置から抜き出して
-//   画面左上に固定表示するための保管場所（表示解除時に元へ戻すために使う）
-let _floatingControlsOriginalParent = null;
-let _floatingControlsOriginalNextSibling = null;
+//   画面左上に固定表示するための「目印」。
+//   ★★★ 修正：以前はボタン同士の兄弟関係(nextSibling)を復元の目印にしていたが、
+//   復元処理の途中で「まだ移動先コンテナに残っているボタン」を基準に
+//   insertBefore()しようとして NotFoundError（基準ノードが元の親の子ではない）
+//   が発生し、そこで処理が止まってボタンが左上に取り残される不具合があった。
+//   絶対に動かない専用のプレースホルダー要素を目印にすることで解決する。
+let _floatingControlsPlaceholder = null;
 
 function moveTransportControlsToFloatingCorner() {
     const playBtn = document.getElementById('studio-play-btn');
@@ -570,9 +594,9 @@ function moveTransportControlsToFloatingCorner() {
     // ★ 既に移動済みなら何もしない
     if (document.getElementById('floating-transport-controls')) return;
 
-    // 元の位置（親要素・直後の兄弟要素）を覚えておく
-    _floatingControlsOriginalParent = playBtn.parentElement;
-    _floatingControlsOriginalNextSibling = playBtn.nextSibling;
+    // ★ 元の位置に、動かない目印（コメントノード）を残しておく
+    _floatingControlsPlaceholder = document.createComment('floating-transport-controls-placeholder');
+    playBtn.parentElement.insertBefore(_floatingControlsPlaceholder, playBtn);
 
     const floatingBox = document.createElement('div');
     floatingBox.id = 'floating-transport-controls';
@@ -589,11 +613,14 @@ function restoreTransportControlsFromFloatingCorner() {
     const playBtn = document.getElementById('studio-play-btn');
     const stopBtn = document.getElementById('studio-stop-btn');
 
-    if (_floatingControlsOriginalParent) {
-        // ★ 元あった場所（同じ兄弟要素の直前）に戻す
-        if (playBtn) _floatingControlsOriginalParent.insertBefore(playBtn, _floatingControlsOriginalNextSibling);
-        if (stopBtn) _floatingControlsOriginalParent.insertBefore(stopBtn, _floatingControlsOriginalNextSibling);
+    if (_floatingControlsPlaceholder && _floatingControlsPlaceholder.parentNode) {
+        // ★ 目印（コメントノード）は一度も動かしていないので、常に安全に参照できる
+        const parent = _floatingControlsPlaceholder.parentNode;
+        if (playBtn) parent.insertBefore(playBtn, _floatingControlsPlaceholder);
+        if (stopBtn) parent.insertBefore(stopBtn, _floatingControlsPlaceholder);
+        parent.removeChild(_floatingControlsPlaceholder);
     }
+    _floatingControlsPlaceholder = null;
     floatingBox.remove();
 }
 
