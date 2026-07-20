@@ -497,10 +497,10 @@ container.style.cssText = `
         //   鍵盤を半透明化・他のUIオブジェクトを透明化して没入感を出す。
         //   実際の背景表示(iframe)への切り替えも、GAME ON開始のこの瞬間に行う
         //   （常時表示だと、ESC中断・曲完了・リロード後もdefaultに戻らなかったため）。
-        if (window.hasCustomBgUrl && window.customBgUrlValue) {
+        if ((window.hasCustomBgUrl && window.customBgUrlValue) || (window.hasCustomBgImage && window.customBgImageValue)) {
             document.body.classList.add('game-bg-active');
-            if (typeof window.showCustomBackground === 'function') {
-                window.showCustomBackground(window.customBgUrlValue);
+            if (typeof window.showConfiguredCustomBackground === 'function') {
+                window.showConfiguredCustomBackground();
             }
         }
 
@@ -701,10 +701,10 @@ if (!isMidiLoaded || currentFileName !== lastLoadedFileName) {
         //   鍵盤を半透明化・他のUIオブジェクトを透明化して没入感を出す。
         //   実際の背景表示(iframe)への切り替えも、GAME ON開始のこの瞬間に行う
         //   （常時表示だと、ESC中断・曲完了・リロード後もdefaultに戻らなかったため）。
-        if (window.hasCustomBgUrl && window.customBgUrlValue) {
+        if ((window.hasCustomBgUrl && window.customBgUrlValue) || (window.hasCustomBgImage && window.customBgImageValue)) {
             document.body.classList.add('game-bg-active');
-            if (typeof window.showCustomBackground === 'function') {
-                window.showCustomBackground(window.customBgUrlValue);
+            if (typeof window.showConfiguredCustomBackground === 'function') {
+                window.showConfiguredCustomBackground();
             }
         }
 
@@ -731,10 +731,10 @@ if (!isMidiLoaded || currentFileName !== lastLoadedFileName) {
     //   カスタム背景URLが設定されていれば反映する。
     //   GAME ONと同じく game-bg-active を付与し、タグ等のUIを透過させて
     //   背景をしっかり見せる。
-    if (window.hasCustomBgUrl && window.customBgUrlValue) {
+    if ((window.hasCustomBgUrl && window.customBgUrlValue) || (window.hasCustomBgImage && window.customBgImageValue)) {
         document.body.classList.add('game-bg-active');
-        if (typeof window.showCustomBackground === 'function') {
-            window.showCustomBackground(window.customBgUrlValue);
+        if (typeof window.showConfiguredCustomBackground === 'function') {
+            window.showConfiguredCustomBackground();
         }
     }
 
