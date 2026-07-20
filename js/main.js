@@ -70,6 +70,7 @@ window.currentPlayback.timeouts = record.events.map(ev => {
 const DEFAULT_BG_PATH = 'assets/copilot_image_1774523714927.jpeg';
 const BG_STORAGE_KEY = 'pianoworks_custom_bg';
 const BG_URL_STORAGE_KEY = 'pianoworks_custom_bg_url'; // ★ URL背景用の保存キー
+const BG_IMAGE_STORAGE_KEY = 'pianoworks_custom_bg_image'; // ★ 画像背景（セッション中だけ表示）用の保存キー
 const GAME_OVERLAY_OPACITY_KEY = 'pianoworks_game_overlay_opacity'; // ★ GAME ONオーバーレイの濃さ
 
 // 設定一時保持用（OKを押すまでここを書き換える）
@@ -77,6 +78,7 @@ let tempConfig = {
     focusRange: "3", // オクターブ幅（マスク）
     pendingBgDataUrl: null, // 背景画像
     pendingBgUrl: undefined, // ★ URL背景（undefined=未変更, null=クリア, 文字列=新しいURL）
+    pendingBgImageDataUrl: undefined, // ★ 画像背景（セッション中だけ表示。undefined=未変更, null=クリア, データURL=新しい画像）
     pendingOverlayOpacity: undefined // ★ GAME ONオーバーレイの濃さ（undefined=未変更）
 };
 
@@ -476,6 +478,7 @@ function setupModals() {
             tempConfig.focusRange = currentChecked ? currentChecked.value : "3";
             tempConfig.pendingBgDataUrl = null; 
             tempConfig.pendingBgUrl = undefined; // ★ 開くたびにリセット
+            tempConfig.pendingBgImageDataUrl = undefined; // ★ 開くたびにリセット
             tempConfig.pendingOverlayOpacity = undefined; // ★ 開くたびにリセット
             const urlInput = document.getElementById('bg-url-input');
             const statusEl = document.getElementById('bg-url-status');
@@ -573,6 +576,16 @@ function initBackground() {
         window.customBgUrlValue = null;
     }
 
+    // ★ 画像背景（セッション中だけ表示）の設定も、同じくURLと排他で覚えておくだけにする
+    const savedBgImage = localStorage.getItem(BG_IMAGE_STORAGE_KEY);
+    if (savedBgImage && !savedBgUrl) {
+        window.hasCustomBgImage = true;
+        window.customBgImageValue = savedBgImage;
+    } else {
+        window.hasCustomBgImage = false;
+        window.customBgImageValue = null;
+    }
+
     // ★ GAME ONオーバーレイの濃さを復元（未設定なら0.95がデフォルト）
     const savedOpacity = localStorage.getItem(GAME_OVERLAY_OPACITY_KEY);
     window.gameOverlayOpacity = savedOpacity !== null ? parseFloat(savedOpacity) : 0.95;
@@ -649,6 +662,51 @@ function showCustomBackground(url) {
 }
 window.showCustomBackground = showCustomBackground; // ★ studio.js から呼べるように公開
 
+// ★ 元の（通常時の）背景画像を、切り替える前に一度だけ覚えておくための変数。
+//   showDefaultBackground() で正しく元へ戻すために使う。
+let _originalVideoBgImage = null;
+
+/**
+ * ★ 背景を、選択した画像1枚に切り替える【表示専用・設定の保存はしない】。
+ *   URL背景と同じく、再生開始時に studio.js から呼ばれる。
+ */
+function showCustomBackgroundImage(dataUrl) {
+    const videoBgLayer = document.getElementById('video-background');
+    const iframe = document.getElementById('video-background-iframe');
+    if (!videoBgLayer || !dataUrl) return;
+
+    // ★ 元の背景画像を、まだ覚えていなければここで覚えておく
+    if (_originalVideoBgImage === null) {
+        _originalVideoBgImage = videoBgLayer.style.backgroundImage || `url(${DEFAULT_BG_PATH})`;
+    }
+
+    if (iframe) {
+        iframe.style.display = 'none';
+        iframe.src = 'about:blank';
+    }
+    videoBgLayer.style.backgroundImage = `url(${dataUrl})`;
+    videoBgLayer.style.display = 'block';
+
+    // ★ #ui-layer ごと透過するため、PLAY/STOPボタンだけは
+    //   外に出して画面左上に残す（機能はそのまま使える）
+    moveTransportControlsToFloatingCorner();
+}
+window.showCustomBackgroundImage = showCustomBackgroundImage; // ★ studio.js から呼べるように公開
+
+/**
+ * ★ URL背景・画像背景のどちらが設定されていても、
+ *   まとめて正しい方を表示する（studio.js側の呼び出しを一本化するためのヘルパー）。
+ *   URLが優先（両方同時に設定されることは無い想定だが、念のため）。
+ */
+function showConfiguredCustomBackground() {
+    if (window.hasCustomBgUrl && window.customBgUrlValue) {
+        showCustomBackground(window.customBgUrlValue);
+    } else if (window.hasCustomBgImage && window.customBgImageValue) {
+        showCustomBackgroundImage(window.customBgImageValue);
+    }
+}
+window.showConfiguredCustomBackground = showConfiguredCustomBackground; // ★ studio.js から呼べるように公開
+
 /**
  * ★ 背景を通常の画像表示に戻す【表示専用・設定の削除はしない】。
  *   GAME ON終了時（ESC中断・曲完了）に studio.js から呼ばれる。
@@ -661,7 +719,15 @@ function showDefaultBackground() {
         iframe.style.display = 'none';
         iframe.src = 'about:blank';
     }
-    if (videoBgLayer) videoBgLayer.style.display = 'block';
+    if (videoBgLayer) {
+        // ★ 画像背景に切り替える前の、元の背景に戻す
+        //   （一度も画像背景に切り替えていなければ何もしない＝元々の表示のまま）
+        if (_originalVideoBgImage !== null) {
+            videoBgLayer.style.backgroundImage = _originalVideoBgImage;
+            _originalVideoBgImage = null;
+        }
+        videoBgLayer.style.display = 'block';
+    }
 
     // ★ 左上に出しておいたPLAY/STOPボタンを元の位置へ戻す
     restoreTransportControlsFromFloatingCorner();
@@ -694,15 +760,23 @@ function setupBackgroundSettings() {
     const customizeBtn = document.getElementById('bg-customize-btn');
     const defaultBtn = document.getElementById('bg-default-btn');
     const statusEl = document.getElementById('bg-url-status');
+    const imageUploadInput = document.getElementById('bg-image-upload');
 
     if (!customizeBtn || !urlInput) return;
 
     customizeBtn.onclick = () => {
         const raw = urlInput.value.trim();
+
+        // ★ URLが未入力の場合：画像ファイルを選んで背景にできるようにする
         if (!raw) {
-            if (statusEl) statusEl.textContent = 'URLを入力してください';
+            if (imageUploadInput) {
+                imageUploadInput.click();
+            } else if (statusEl) {
+                statusEl.textContent = 'URLを入力してください';
+            }
             return;
         }
+
         // プロトコル省略時は https:// を補う
         const url = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
         try {
@@ -713,14 +787,40 @@ function setupBackgroundSettings() {
         }
 
         tempConfig.pendingBgUrl = normalizeVideoUrl(url);
+        tempConfig.pendingBgImageDataUrl = null; // 画像背景とは排他にする
         if (statusEl) statusEl.textContent = `準備できました → APPLY OKで反映されます`;
     };
 
-    // ★ Default：URL背景を解除し、元の背景に戻す（APPLY OKまでは確定しない）
+    // ★ 画像ファイルが選択されたら、Data URLとして読み込む。
+    //   URL背景と同じく「セッション中（再生開始〜停止）だけ表示、停止すると
+    //   元の背景に戻る」という動きにするため、専用の pendingBgImageDataUrl に
+    //   保存する（常時表示を変えてしまう既存の pendingBgDataUrl とは別物）。
+    //   URL背景（iframe表示）とは排他にする（両方同時に有効にはしない）。
+    if (imageUploadInput) {
+        imageUploadInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                tempConfig.pendingBgImageDataUrl = ev.target.result;
+                tempConfig.pendingBgUrl = null; // URL背景とは排他にする
+                urlInput.value = '';
+                if (statusEl) statusEl.textContent = `画像を準備しました → APPLY OKで反映されます`;
+            };
+            reader.readAsDataURL(file);
+
+            // ★ 同じファイルを連続で選び直せるようリセット
+            imageUploadInput.value = '';
+        });
+    }
+
+    // ★ Default：URL背景・画像背景どちらも解除し、元の背景に戻す（APPLY OKまでは確定しない）
     if (defaultBtn) {
         defaultBtn.onclick = () => {
             urlInput.value = '';
             tempConfig.pendingBgUrl = null; // null = クリアする、の意味
+            tempConfig.pendingBgImageDataUrl = null; // null = クリアする、の意味
             if (statusEl) statusEl.textContent = `元の背景に戻す準備ができました → APPLY OKで反映されます`;
         };
     }
@@ -784,6 +884,7 @@ function discardSettings() {
     
     tempConfig.pendingBgDataUrl = null;
     tempConfig.pendingBgUrl = undefined; // ★ URL背景の変更も破棄
+    tempConfig.pendingBgImageDataUrl = undefined; // ★ 画像背景の変更も破棄
     tempConfig.pendingOverlayOpacity = undefined; // ★ オーバーレイ濃さの変更も破棄
     const urlInput = document.getElementById('bg-url-input');
     const statusEl = document.getElementById('bg-url-status');
@@ -831,6 +932,21 @@ if (okBtn) {
                 window.customBgUrlValue = tempConfig.pendingBgUrl;
             }
             tempConfig.pendingBgUrl = undefined;
+        }
+
+        // 3.5 ★ 画像背景を確定・保存（URLと同じく、設定を保存するだけ。
+        //     実際の表示切り替えは再生開始時に行う）
+        if (tempConfig.pendingBgImageDataUrl !== undefined) {
+            if (tempConfig.pendingBgImageDataUrl === null) {
+                localStorage.removeItem(BG_IMAGE_STORAGE_KEY);
+                window.hasCustomBgImage = false;
+                window.customBgImageValue = null;
+            } else {
+                localStorage.setItem(BG_IMAGE_STORAGE_KEY, tempConfig.pendingBgImageDataUrl);
+                window.hasCustomBgImage = true;
+                window.customBgImageValue = tempConfig.pendingBgImageDataUrl;
+            }
+            tempConfig.pendingBgImageDataUrl = undefined;
         }
 
         // 4. ★ GAME ONオーバーレイの濃さを確定・保存
