@@ -1113,6 +1113,13 @@
     line-height: 1.6;
 }
 
+.help-easel-preview {
+    width: 70px;
+    height: auto;
+    flex-shrink: 0;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
 
 /* --- アニメーション定義 --- */
 @keyframes modalSlideDown {
