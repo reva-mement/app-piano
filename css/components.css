@@ -598,7 +598,7 @@
    中心(188,218)から右に50px・上に20px寄せた位置が実際にちょうど良かったため、その値を使用。 */
 .weather-visual-box {
     position: absolute; /* 他の要素を無視して配置 */
-    top: 85px;
+    top: 106px;
     left: 24px;
 
     display: flex;
@@ -970,6 +970,82 @@
 }
 
 /* ★ Jukeboxモーダルのボタン（IMPORT MIDI・CANCEL）も他モーダルと同じデザインに統一 */
+
+/* ============================================================
+   簡易チュートリアル（Web版限定・スライド形式）
+   ============================================================ */
+.tutorial-container {
+    min-width: 460px;
+    max-width: 520px;
+}
+
+#tutorial-slide-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 36px;
+    min-height: 260px;
+}
+
+.tutorial-slide-icon {
+    font-size: 3.2rem;
+    margin-bottom: 18px;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
+    animation: tutorialIconIn 0.4s ease-out;
+}
+
+.tutorial-slide-title {
+    font-family: var(--font-serif);
+    color: #d2b48c;
+    font-size: 1.15rem;
+    font-weight: 900;
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.tutorial-slide-text {
+    color: #e0cda9;
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 0.95rem;
+    line-height: 1.9;
+}
+
+.tutorial-footer {
+    justify-content: space-between !important;
+}
+
+.tutorial-dots {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tutorial-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(210, 180, 140, 0.3);
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.tutorial-dot.active {
+    background: #d4af37;
+    transform: scale(1.3);
+}
+
+.tutorial-nav-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+@keyframes tutorialIconIn {
+    from { opacity: 0; transform: translateY(-6px) scale(0.9); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 #pw-jukebox-board .btn-stamp-base {
     background: #3d2b1f !important;
     background: linear-gradient(to bottom, #4a3526, #3d2b1f) !important;
