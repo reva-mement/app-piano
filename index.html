@@ -268,13 +268,6 @@
                 </div>
             </div>
 
-            <div class="settings-group" id="tutorial-settings-group" style="display:none;">
-                <span class="settings-group-label">チュートリアル</span>
-                <div class="settings-item" style="text-align:center;">
-                    <button id="tutorial-reopen-btn" class="btn-stamp-base">もう一度見る</button>
-                </div>
-            </div>
-
             <!-- ★ PianoWorksバナーを上に -->
             <img src="assets/banner1_2.5x.png" alt="PianoWorks Banner"
                  onclick="if (window.__TAURI__) { window.__TAURI__.core.invoke('plugin:opener|open_url', { url: 'https://t.co/6EumuT2iMr' }); } else { window.open('https://t.co/6EumuT2iMr', '_blank'); }"
@@ -287,6 +280,7 @@
         </div>
 
         <div class="settings-footer">
+            <button id="tutorial-reopen-btn" class="btn-stamp-base" style="display:none;">チュートリアル</button>
             <button id="settings-cancel-btn" class="btn-stamp-base">CANCEL</button>
             <button id="settings-ok-btn" class="btn-stamp-gold">APPLY OK</button>
         </div>
