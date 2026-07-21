@@ -28,8 +28,13 @@ const SLIDES = [
     },
     {
         icon: '🎹',
-        title: '鍵盤の視界範囲を調整しよう',
-        text: '鍵盤の下にあるMIN〜MAXのスライダーで、ハイライトされる音域の広さを調整できます。\n練習したい範囲に合わせて、見やすい広さに変えてみてください。'
+        title: '弾く音階を調整しよう',
+        text: '設定（右上の歯車）の「演奏視界の広さ」から、ハイライトされる音域の広さを調整できます。\n練習したい範囲に合わせて、見やすい広さに変えてみてください。'
+    },
+    {
+        icon: '🔁',
+        title: 'このチュートリアルはいつでも見返せます',
+        text: '設定（右上の歯車）を開くと、CANCELボタンの左側に「チュートリアル」ボタンがあります。\n操作を忘れてしまった時は、ここからいつでもこの説明をもう一度確認できます。'
     }
 ];
 
@@ -82,12 +87,11 @@ export function setupTutorial() {
     const prevBtn = document.getElementById('tutorial-prev-btn');
     const nextBtn = document.getElementById('tutorial-next-btn');
     const reopenBtn = document.getElementById('tutorial-reopen-btn');
-    const settingsGroup = document.getElementById('tutorial-settings-group');
 
     if (!overlay) return;
 
-    // ★ 設定画面の「もう一度見る」は、Web版でのみ表示する
-    if (settingsGroup) settingsGroup.style.display = 'block';
+    // ★ 「もう一度見る」ボタンは、Web版でのみ表示する
+    if (reopenBtn) reopenBtn.style.display = 'flex';
 
     if (closeBtn) closeBtn.addEventListener('click', closeTutorial);
     if (reopenBtn) reopenBtn.addEventListener('click', openTutorial);
