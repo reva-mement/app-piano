@@ -7,6 +7,7 @@ import { initStudioMode } from './modes/studio.js';
 import { playnoteDB, getAndExportMIDI, saveAndRefresh, deleteAndRefresh, refreshArchiveUI } from './playnote-db.js';
 import { setupScoreBoard, renderStudioScoreList, saveImportedMidiToScoring } from "./modes/studio/studio-scoring-ui.js";
 import { setupJukeboxBoard, renderJukeboxList } from "./modes/jukebox.js";
+import { setupTutorial } from "./tutorial.js";
 
 // ★ 追加：思考エンジンのインポート
 import { initThoughtEngine } from './thought-engine.js';
@@ -128,6 +129,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         /* ★ 追加：Jukebox モーダルのセットアップ */
         setupJukeboxBoard();
+
+        /* ★ 追加：簡易チュートリアルのセットアップ（Web版限定） */
+        setupTutorial();
 
         initBackground();
         await initStudioMode(() => loadedMidiData);
