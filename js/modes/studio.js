@@ -78,10 +78,29 @@ export async function initStudioMode(loadedMidiDataGetter) {
             midiPlayer.on('endOfFile', () => {
                 // ★ Studio GAME中に曲が最後まで自然に終わった場合も、
                 //   ESC→はい と同じ後始末（スコア保存・フェード復帰）を行う
-                const isStudioSessionActive = window.isStudioMode === true && !!window.gameEngine;
+                // ★★★ 修正：以前は window.isStudioMode と window.gameEngine の
+                //   有無だけで判定していたが、どちらも「前回のGAME ONセッション」の
+                //   状態が残ったままになりやすく、Jukebox再生（GAME ONではない）
+                //   終了時にも誤って finishStudioGameSession() が呼ばれ、
+                //   スコアは出るのにメイン画面へ戻れなくなる不具合があった。
+                //   実際に「今GAME ON中かどうか」を最も正確に表す
+                //   window.isGuideMode を主な判定に使う。
+                const isStudioSessionActive =
+                    window.isGuideMode === true &&
+                    window.isStudioMode === true &&
+                    !!window.gameEngine &&
+                    window.gameEngine.isRunning === true;
+                // ★★★ 診断ログ（原因特定用。あとで削除予定） ★★★
+                console.log("🏁 [診断] endOfFile発火。isGuideMode=", window.isGuideMode,
+                    " isStudioMode=", window.isStudioMode,
+                    " gameEngine=", !!window.gameEngine,
+                    " gameEngine.isRunning=", window.gameEngine && window.gameEngine.isRunning,
+                    " → isStudioSessionActive=", isStudioSessionActive);
                 if (isStudioSessionActive) {
+                    console.log("🏁 [診断] finishStudioGameSession() を呼びます");
                     finishStudioGameSession();
                 } else {
+                    console.log("🏁 [診断] handleStopMIDI() を呼びます");
                     handleStopMIDI();
                 }
             });
@@ -1198,8 +1217,11 @@ async function finishStudioGameSession() {
     }
 
     // ★ スコアが左上から飛び出す演出 → 表示が終わってから初めてフェードアウトを開始する
+    console.log("🏁 [診断] showScorePopup() を呼びます", { scoreToShow, songTitleForDisplay, isHighScore });
     await showScorePopup(scoreToShow, songTitleForDisplay, 500, isHighScore);
+    console.log("🏁 [診断] showScorePopup() 完了。fadeOutStudioCanvas() を呼びます");
     fadeOutStudioCanvas(5000, () => {
+        console.log("🏁 [診断] fadeOutStudioCanvas() のコールバック実行（暗転が明るく戻った）");
         // ★ 暗転が完全に明るく戻ったタイミングで、smiling.pngとともにスコアを発表する
         //   （1ブロックも弾かなかった場合はresultLineが空のまま＝発表しない、元の挙動を踏襲）
         if (resultLine) {
@@ -1211,6 +1233,7 @@ async function finishStudioGameSession() {
     // フラグ類リセット
     window.isPlaying = false;
     window.isStudioMode = false;
+    console.log("🏁 [診断] finishStudioGameSession() 完了");
 
     // スコア一覧更新
     if (typeof renderStudioScoreList === 'function') {
@@ -1284,7 +1307,27 @@ function setupStudioUI(loadedMidiDataGetter) {
         let current = (manualSec !== null) ? manualSec : getInternalTime();
         if (current > total) {
             current = total;
-            if (window.isPlaying) handleStopMIDI();
+            // ★★★ 修正：ここは「壁時計（performance.now()基準）の経過時間」で
+            //   曲の終わりを検知する見張り役だが、以前は常に handleStopMIDI()
+            //   （ただの停止）しか呼んでおらず、GAME ON中にここへ来ると
+            //   スコア保存・フェード復帰（finishStudioGameSession）が
+            //   一切実行されず「戻らない」不具合になっていた。
+            //   endOfFile（MIDIプレイヤー内部のtick基準）が何らかの理由で
+            //   発火しなかった場合の保険として、こちらも他の終了検知箇所
+            //   （endOfFileハンドラ・ESCハンドラ）と同じ判定を行う。
+            if (window.isPlaying) {
+                const isStudioSessionActive =
+                    window.isGuideMode === true &&
+                    window.isStudioMode === true &&
+                    !!window.gameEngine &&
+                    window.gameEngine.isRunning === true;
+                console.log("⏱️ [診断] 壁時計基準で曲の終わりを検知。isStudioSessionActive=", isStudioSessionActive);
+                if (isStudioSessionActive) {
+                    finishStudioGameSession();
+                } else {
+                    handleStopMIDI();
+                }
+            }
         }
 
         if (timeDisplay) {
@@ -1614,7 +1657,16 @@ window.addEventListener('keydown', (event) => {
     // window.gameEngine が生成され、停止（はい）で必ず null に戻る。
     // これを「実際に再生中（カウントダウン中・一時停止中も含む）」の
     // 判定として使い、再生していない時はESCで何もしないようにする。
-    const isStudioSessionActive = window.isStudioMode === true && !!window.gameEngine;
+    // ★★★ さらに修正：window.isStudioMode / window.gameEngine は、
+    //   過去のGAME ONセッションの後片付けが完全でないと残ってしまう
+    //   ことがあり、その状態でJukebox等の通常再生中にESCを押すと、
+    //   本来何もしないはずが誤ってGAME ON用の中断処理が走ってしまい、
+    //   そこから状態が壊れる不具合があった。再生を始めるたびに必ず
+    //   設定し直される window.isGuideMode を条件に加えて確実にする。
+    const isStudioSessionActive =
+        window.isGuideMode === true &&
+        window.isStudioMode === true &&
+        !!window.gameEngine;
 
     if (!isStudioSessionActive) {
         return;
